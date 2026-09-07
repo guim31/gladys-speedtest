@@ -74,6 +74,20 @@ test('every value-bearing config_schema field is normalized by the code', () => 
   }
 });
 
+test('every user-facing text is a language object (store validator rule)', () => {
+  // The store rejects plain strings: label, description and placeholder must
+  // map language codes to strings, with at least `en`.
+  const fields = [...manifest.config_schema, ...(manifest.actions ?? [])];
+  for (const field of fields) {
+    for (const key of ['label', 'description', 'placeholder']) {
+      if (field[key] !== undefined) {
+        assert.equal(typeof field[key], 'object', `"${field.key}".${key} must be an object`);
+        assert.equal(typeof field[key].en, 'string', `"${field.key}".${key} needs an "en" text`);
+      }
+    }
+  }
+});
+
 test('section fields are purely presentational', () => {
   const sections = manifest.config_schema.filter((f) => f.type === 'section');
   for (const section of sections) {

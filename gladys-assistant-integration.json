@@ -81,7 +81,7 @@
         "fr": "Laissez vide pour choisir automatiquement le meilleur serveur proche. Le bouton « Lister les serveurs proches » donne les ID."
       },
       "required": false,
-      "placeholder": "32565"
+      "placeholder": { "en": "32565", "fr": "32565" }
     },
     {
       "key": "connections",
