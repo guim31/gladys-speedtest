@@ -1,33 +1,47 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeConfig, DEFAULT_CONFIG } from '../src/config.js';
+import { DEFAULT_CONFIG, normalizeConfig } from '../src/config.js';
 
-test('normalizeConfig returns the defaults when called with no argument', () => {
+test('normalizeConfig returns the defaults for an empty config', () => {
   assert.deepEqual(normalizeConfig(), DEFAULT_CONFIG);
+  assert.deepEqual(normalizeConfig({}), DEFAULT_CONFIG);
 });
 
-test('normalizeConfig keeps user values over the defaults', () => {
-  const config = normalizeConfig({ latitude: 45.5, longitude: -73.6, unit: 'fahrenheit' });
-  assert.equal(config.latitude, 45.5);
-  assert.equal(config.longitude, -73.6);
-  assert.equal(config.unit, 'fahrenheit');
+test('normalizeConfig coerces form strings to numbers', () => {
+  const config = normalizeConfig({ poll_frequency: '7200', connections: '2', duration: '15' });
+  assert.equal(config.poll_frequency, 7200);
+  assert.equal(config.connections, 2);
+  assert.equal(config.duration, 15);
 });
 
-test('normalizeConfig coerces numeric strings coming from a form', () => {
-  const config = normalizeConfig({ latitude: '48.8', longitude: '2.3', poll_frequency: '600' });
-  assert.equal(config.latitude, 48.8);
-  assert.equal(config.longitude, 2.3);
-  assert.equal(config.poll_frequency, 600);
-  assert.equal(typeof config.poll_frequency, 'number');
+test('normalizeConfig clamps out-of-range numbers', () => {
+  const low = normalizeConfig({ poll_frequency: 10, connections: 0, duration: 1 });
+  assert.equal(low.poll_frequency, 600);
+  assert.equal(low.connections, 1);
+  assert.equal(low.duration, 5);
+
+  const high = normalizeConfig({ poll_frequency: 999999, connections: 50, duration: 120 });
+  assert.equal(high.poll_frequency, 86400);
+  assert.equal(high.connections, 8);
+  assert.equal(high.duration, 20);
 });
 
-test('normalizeConfig falls back to the default for a missing numeric field', () => {
-  const config = normalizeConfig({ unit: 'celsius' });
+test('normalizeConfig falls back to defaults on garbage numbers', () => {
+  const config = normalizeConfig({ poll_frequency: 'soon', connections: null, duration: {} });
   assert.equal(config.poll_frequency, DEFAULT_CONFIG.poll_frequency);
+  assert.equal(config.connections, DEFAULT_CONFIG.connections);
+  assert.equal(config.duration, DEFAULT_CONFIG.duration);
 });
 
-test('GLADYS_PREFER_LOCAL defaults to true and only an explicit false disables it', () => {
-  assert.equal(normalizeConfig().GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: true }).GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: false }).GLADYS_PREFER_LOCAL, false);
+test('normalizeConfig trims the server id and keeps it a string', () => {
+  assert.equal(normalizeConfig({ server_id: '  32565  ' }).server_id, '32565');
+  assert.equal(normalizeConfig({ server_id: 32565 }).server_id, '32565');
+  assert.equal(normalizeConfig({ server_id: undefined }).server_id, '');
+});
+
+test('auto_test only turns off on an explicit false', () => {
+  assert.equal(normalizeConfig({ auto_test: false }).auto_test, false);
+  assert.equal(normalizeConfig({ auto_test: 'false' }).auto_test, false);
+  assert.equal(normalizeConfig({ auto_test: true }).auto_test, true);
+  assert.equal(normalizeConfig({}).auto_test, true);
 });

@@ -1,102 +1,105 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Speedtest.net",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Measure your internet speed on a schedule using Speedtest.net servers.",
+    "fr": "Mesurez périodiquement le débit de votre connexion via les serveurs Speedtest.net."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-speedtest:1.0.0",
   "gladys_version": ">=4.86.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-speedtest/main/cover.png",
+  "categories": ["network", "services"],
+  "transports": ["cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": { "en": "How it works", "fr": "Fonctionnement" },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "A test saturates your connection for about 25 seconds and can transfer several hundred MB per run: mind your data cap when choosing the interval. Results are stored as four sensors (download, upload, ping, jitter) you can chart and use in scenes.",
+        "fr": "Un test sature la connexion pendant environ 25 secondes et peut transférer plusieurs centaines de Mo : tenez compte de votre quota de données en choisissant l'intervalle. Les résultats alimentent quatre capteurs (débits, ping, gigue) exploitables en graphiques et dans les scènes."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://www.speedtest.net/",
+          "label": { "en": "Speedtest.net", "fr": "Speedtest.net" }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
+      "key": "auto_test",
+      "type": "boolean",
+      "label": { "en": "Run tests automatically", "fr": "Lancer les tests automatiquement" },
       "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+        "en": "When disabled, tests only run through the manual button below.",
+        "fr": "Désactivé, les tests ne partent que via le bouton manuel ci-dessous."
       },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
-    },
-    {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
-      },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
-    },
-    {
-      "key": "unit",
-      "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
       "required": false,
-      "default": "celsius",
-      "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
-      ]
+      "default": true
     },
     {
       "key": "poll_frequency",
       "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "label": { "en": "Interval between tests (s)", "fr": "Intervalle entre les tests (s)" },
       "description": {
-        "en": "How often sensors are polled, in seconds.",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes."
+        "en": "Seconds between automatic tests. 3600 = one test per hour.",
+        "fr": "Secondes entre deux tests automatiques. 3600 = un test par heure."
       },
       "required": false,
-      "default": 300,
-      "min": 30,
-      "max": 3600
+      "default": 3600,
+      "min": 600,
+      "max": 86400
+    },
+    {
+      "key": "server_id",
+      "type": "string",
+      "label": { "en": "Server ID (optional)", "fr": "ID du serveur (optionnel)" },
+      "description": {
+        "en": "Leave empty to auto-select the closest healthy server. Use the \"List nearby servers\" button to find IDs.",
+        "fr": "Laissez vide pour choisir automatiquement le meilleur serveur proche. Le bouton « Lister les serveurs proches » donne les ID."
+      },
+      "required": false,
+      "placeholder": "32565"
+    },
+    {
+      "key": "connections",
+      "type": "number",
+      "label": { "en": "Parallel connections", "fr": "Connexions parallèles" },
+      "description": {
+        "en": "TCP connections per direction. More connections fill fast links better.",
+        "fr": "Connexions TCP par sens de mesure. Plus il y en a, mieux les liens rapides sont remplis."
+      },
+      "required": false,
+      "default": 4,
+      "min": 1,
+      "max": 8
+    },
+    {
+      "key": "duration",
+      "type": "number",
+      "label": { "en": "Measurement time per direction (s)", "fr": "Durée de mesure par sens (s)" },
+      "description": {
+        "en": "Longer measurements are steadier but transfer more data.",
+        "fr": "Une mesure plus longue est plus stable mais transfère plus de données."
+      },
+      "required": false,
+      "default": 10,
+      "min": 5,
+      "max": 20
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
+      "key": "run_speedtest",
+      "label": { "en": "Run a speed test now", "fr": "Lancer un test de débit" },
+      "timeout_seconds": 90
     },
     {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
+      "key": "list_servers",
+      "label": { "en": "List nearby servers", "fr": "Lister les serveurs proches" },
+      "timeout_seconds": 30
     }
   ]
 }

@@ -13,26 +13,33 @@ import { DEFAULT_CONFIG } from '../src/config.js';
 const manifest = JSON.parse(
   await readFile(new URL('../gladys-assistant-integration.json', import.meta.url), 'utf8'),
 );
-
-// Actions registered outside the blueprints (see index.js).
-const REGISTRY_LEVEL_ACTIONS = ['identify'];
+const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 
 test('every manifest action has a registered handler', () => {
-  const handled = new Set([
-    ...DEVICE_BLUEPRINTS.flatMap((bp) => Object.keys(bp.actions ?? {})),
-    ...REGISTRY_LEVEL_ACTIONS,
-  ]);
+  const handled = new Set(DEVICE_BLUEPRINTS.flatMap((bp) => Object.keys(bp.actions ?? {})));
   for (const action of manifest.actions ?? []) {
     assert.ok(handled.has(action.key), `manifest action "${action.key}" has no handler`);
   }
 });
 
+test('every registered action handler is declared in the manifest', () => {
+  const declared = new Set((manifest.actions ?? []).map((a) => a.key));
+  for (const key of DEVICE_BLUEPRINTS.flatMap((bp) => Object.keys(bp.actions ?? {}))) {
+    assert.ok(declared.has(key), `handler "${key}" is not declared in the manifest`);
+  }
+});
+
+test('manifest version stays in lockstep with package.json and the image tag', () => {
+  // The Release workflow bumps all three together; a hand edit that desyncs
+  // them would ship an image whose embedded manifest lies about its version.
+  assert.equal(manifest.version, pkg.version);
+  assert.ok(
+    manifest.docker_image.endsWith(`:${manifest.version}`),
+    `docker_image tag must match version ${manifest.version}`,
+  );
+});
+
 test('declaring catalog categories requires Gladys >= 4.86.0', () => {
-  // The store vocabulary itself is checked by the store validator (unknown
-  // keys are dropped with a warning there) — what this test pins is the
-  // coupling rule: older cores reject any unknown manifest field, so a
-  // manifest declaring `categories` must not claim compatibility below the
-  // first release that accepts it.
   assert.ok(manifest.categories.length >= 1 && manifest.categories.length <= 3);
   const minVersion = manifest.gladys_version.match(/>=\s*(\d+)\.(\d+)\.\d+/);
   assert.ok(minVersion, 'gladys_version must declare a minimum version');
@@ -55,9 +62,20 @@ test('config_schema defaults stay consistent with DEFAULT_CONFIG', () => {
   }
 });
 
+test('every value-bearing config_schema field is normalized by the code', () => {
+  for (const field of manifest.config_schema) {
+    if (field.type === 'section') {
+      continue;
+    }
+    assert.ok(
+      field.key in DEFAULT_CONFIG,
+      `config_schema field "${field.key}" is missing from DEFAULT_CONFIG`,
+    );
+  }
+});
+
 test('section fields are purely presentational', () => {
   const sections = manifest.config_schema.filter((f) => f.type === 'section');
-  assert.ok(sections.length > 0, 'the template demonstrates at least one section block');
   for (const section of sections) {
     // A section stores NO value: declaring `required`, `default` or
     // `placeholder` on it rejects the manifest, and its key must never leak
@@ -77,22 +95,5 @@ test('section fields are purely presentational', () => {
     for (const link of section.links ?? []) {
       assert.match(link.url, /^https:\/\//, 'section links must be https');
     }
-  }
-});
-
-test('dynamic selects declare a source and no static options', () => {
-  const allFields = [
-    ...manifest.config_schema,
-    ...(manifest.actions ?? []).flatMap((a) => a.fields ?? []),
-  ];
-  const dynamicSelects = allFields.filter((f) => f.source !== undefined);
-  assert.ok(dynamicSelects.length > 0, 'the template demonstrates a dynamic select');
-  for (const field of dynamicSelects) {
-    assert.equal(field.source, 'devices', 'the only core-defined source in V1 is "devices"');
-    assert.equal(
-      field.options,
-      undefined,
-      `field "${field.key}": declaring source and options together rejects the manifest`,
-    );
   }
 });

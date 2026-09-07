@@ -1,43 +1,50 @@
-# Template de démonstration
+# Speedtest.net pour Gladys Assistant
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+Mesurez périodiquement votre connexion internet, directement depuis Gladys, via
+le réseau mondial de serveurs Speedtest.net. Chaque test alimente quatre
+capteurs à afficher en graphique sur le tableau de bord et à exploiter dans les
+scènes :
 
-## Ce que vous obtenez
+| Capteur      | Unité  | Ce qu'il indique                                        |
+| ------------ | ------ | ------------------------------------------------------- |
+| **Download** | Mbit/s | La vitesse à laquelle les données arrivent chez vous    |
+| **Upload**   | Mbit/s | La vitesse à laquelle les données partent de chez vous  |
+| **Ping**     | ms     | Le temps de réaction de la connexion (plus bas = mieux) |
+| **Jitter**   | ms     | La stabilité de ce temps de réaction (plus bas = mieux) |
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+Usages typiques : vérifier ce que votre FAI délivre réellement, être averti par
+une scène quand le débit descend sous ce que vous payez, ou détecter qu'un lien
+de secours (bascule 4G…) a pris le relais.
 
-## Configuration
+## Déroulement d'un test
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+L'intégration parle directement à l'infrastructure Speedtest.net — pas de
+compte, pas de clé d'API, aucun logiciel Ookla installé. Par défaut, elle sonde
+les serveurs les plus proches, garde le plus sain, puis mesure latence, débit
+descendant et débit montant (environ 25 secondes au total). Vous pouvez aussi
+imposer un serveur : le bouton **Lister les serveurs proches** donne les ID, à
+coller dans le champ **ID du serveur**.
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+## À savoir
 
-## Actions
-
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+- **Un test sature la connexion pendant qu'il tourne.** Les résultats sont
+  aussi légèrement conservateurs sur les lignes très rapides, la mesure
+  partageant le CPU avec les limites que Gladys impose aux intégrations.
+- **Un test transfère de vraies données** — plusieurs centaines de Mo par
+  passage sur une ligne rapide. Si votre forfait est plafonné, espacez les
+  tests automatiques ou désactivez-les pour ne garder que le bouton manuel.
+- Les tests planifiés suivent le réglage **Intervalle entre les tests** (par
+  défaut : un test par heure). Le bouton **Lancer un test de débit** fonctionne
+  à tout moment.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- _Résultats plus bas que l'application officielle_ : augmentez **Connexions
+  parallèles** (les lignes rapides se remplissent mieux à 6–8) ou la **Durée de
+  mesure**.
+- _Test en échec_ : le serveur le plus proche est peut-être en panne — imposez
+  un autre **ID de serveur**, ou videz le champ pour laisser la sélection
+  automatique écarter les serveurs défaillants.
+
+Cette intégration est un projet communautaire indépendant, sans affiliation ni
+approbation d'Ookla. Speedtest® est une marque d'Ookla, LLC.

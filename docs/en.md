@@ -1,38 +1,45 @@
-# Demo Devices Template
+# Speedtest.net for Gladys Assistant
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+Measure your internet connection on a schedule, straight from Gladys, using the
+worldwide network of Speedtest.net servers. Every run feeds four sensors you can
+chart on your dashboard and use in scenes:
 
-## What you get
+| Sensor       | Unit   | What it tells you                                 |
+| ------------ | ------ | ------------------------------------------------- |
+| **Download** | Mbit/s | How fast data reaches your home                   |
+| **Upload**   | Mbit/s | How fast data leaves your home                    |
+| **Ping**     | ms     | Reaction time of the connection (lower is better) |
+| **Jitter**   | ms     | Stability of that reaction time (lower is better) |
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+Typical uses: keep an eye on what your ISP actually delivers, get notified by a
+scene when the download rate drops below what you pay for, or detect that a
+backup line (4G failover…) has taken over.
 
-## Configuration
+## How a test works
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+The integration talks directly to Speedtest.net infrastructure — no account, no
+API key, no Ookla software installed. By default it probes the closest servers,
+keeps the healthiest one, then measures latency, download and upload (about
+25 seconds in total). You can pin a specific server instead: press **List
+nearby servers** to see IDs, and paste one into the **Server ID** field.
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+## Things to know
 
-## Actions
-
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+- **A test saturates your connection while it runs.** Results are also slightly
+  conservative on very fast lines, since the measurement shares CPU with the
+  sandbox limits Gladys applies to integrations.
+- **A test transfers real data** — several hundred MB per run on a fast line.
+  If your plan has a data cap, increase the interval between tests or disable
+  automatic tests and use the manual button only.
+- Scheduled tests follow the **Interval between tests** setting (default: one
+  test per hour). The **Run a speed test now** button works at any time.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- _Results lower than the official app_: increase **Parallel connections** (fast
+  lines fill better with 6–8) or **Measurement time**.
+- _Test fails_: the closest server may be down — pin a different **Server ID**,
+  or clear the field to let auto-selection skip unhealthy servers.
+
+This integration is an independent community project, not affiliated with or
+endorsed by Ookla. Speedtest® is a trademark of Ookla, LLC.

@@ -13,16 +13,26 @@
 // Defaults: they MUST stay consistent with the `default` values declared in the
 // `config_schema` of the manifest.
 export const DEFAULT_CONFIG = {
-  latitude: 48.8566, // Paris
-  longitude: 2.3522,
-  unit: 'celsius', // 'celsius' | 'fahrenheit'
-  poll_frequency: 300, // seconds, how often sensors are refreshed
-  // Reserved key (NOT in config_schema): because the manifest declares both
-  // 'local' and 'cloud' in its `transports` field, Gladys shows a standard
-  // "Prefer the local connection" toggle and sends the user's choice here.
-  // Read-only for the integration; defaults to true.
-  GLADYS_PREFER_LOCAL: true,
+  server_id: '', // '' = pick the closest healthy server automatically
+  auto_test: true, // run a test on a schedule (Gladys polling)
+  poll_frequency: 3600, // seconds between automatic tests
+  connections: 4, // parallel TCP connections per direction
+  duration: 10, // measured seconds per direction (after a 2 s warmup)
 };
+
+/**
+ * Clamp a numeric field coming from the form (may arrive as a string).
+ */
+function toNumber(raw, fallback, min, max) {
+  if (raw === null || raw === undefined || raw === '') {
+    return fallback;
+  }
+  const value = Number(raw);
+  if (!Number.isFinite(value)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(min, value));
+}
 
 /**
  * Merge the user config with the defaults.
@@ -30,13 +40,11 @@ export const DEFAULT_CONFIG = {
  */
 export function normalizeConfig(raw = {}) {
   return {
-    ...DEFAULT_CONFIG,
-    ...raw,
-    // Force the types: config may arrive as strings from a form.
-    latitude: Number(raw.latitude ?? DEFAULT_CONFIG.latitude),
-    longitude: Number(raw.longitude ?? DEFAULT_CONFIG.longitude),
-    poll_frequency: Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency),
-    // The preference is a boolean; anything but an explicit false means true.
-    GLADYS_PREFER_LOCAL: raw.GLADYS_PREFER_LOCAL !== false,
+    server_id: String(raw.server_id ?? DEFAULT_CONFIG.server_id).trim(),
+    // Anything but an explicit false means true.
+    auto_test: raw.auto_test !== false && raw.auto_test !== 'false',
+    poll_frequency: toNumber(raw.poll_frequency, DEFAULT_CONFIG.poll_frequency, 600, 86400),
+    connections: toNumber(raw.connections, DEFAULT_CONFIG.connections, 1, 8),
+    duration: toNumber(raw.duration, DEFAULT_CONFIG.duration, 5, 20),
   };
 }
