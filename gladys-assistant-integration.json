@@ -6,12 +6,17 @@
     "en": "Measure your internet speed on a schedule using Speedtest.net servers.",
     "fr": "Mesurez périodiquement le débit de votre connexion via les serveurs Speedtest.net."
   },
-  "version": "1.0.1",
-  "docker_image": "ghcr.io/guim31/gladys-speedtest:1.0.1",
+  "version": "1.0.2",
+  "docker_image": "ghcr.io/guim31/gladys-speedtest:1.0.2",
   "gladys_version": ">=4.86.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-speedtest/main/cover.png",
-  "categories": ["network", "services"],
-  "transports": ["cloud"],
+  "categories": [
+    "network",
+    "services"
+  ],
+  "transports": [
+    "cloud"
+  ],
   "config_schema": [
     {
       "key": "intro",
@@ -76,7 +81,10 @@
         "fr": "Laissez vide pour choisir automatiquement le meilleur serveur proche. Le bouton « Lister les serveurs proches » donne les ID."
       },
       "required": false,
-      "placeholder": { "en": "32565", "fr": "32565" }
+      "placeholder": {
+        "en": "32565",
+        "fr": "32565"
+      }
     },
     {
       "key": "connections",
