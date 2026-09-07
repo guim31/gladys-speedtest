@@ -1,6 +1,6 @@
 {
   "name": "gladys-speedtest",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Gladys Assistant external integration: scheduled internet speed measurements against Speedtest.net servers.",
   "type": "module",
