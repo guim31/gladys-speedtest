@@ -17,16 +17,33 @@
 
 import { GladysIntegration, logger } from '@gladysassistant/integration-sdk';
 import { normalizeConfig } from './src/config.js';
-import {
-  DEVICE_BLUEPRINTS,
-  buildDiscoveredDevices,
-  findBlueprintByDevice,
-} from './src/devices/index.js';
+import { DEVICE_BLUEPRINTS, buildDiscoveredDevices } from './src/devices/index.js';
 
 const gladys = new GladysIntegration();
 
 // Current configuration (hot-reloaded via onConfigUpdated).
 let config = normalizeConfig();
+
+// Cleanup functions for the internal schedulers (see startPush in blueprints).
+let pushCleanups = [];
+
+function startPushSubscriptions() {
+  stopPushSubscriptions();
+  pushCleanups = DEVICE_BLUEPRINTS.filter((bp) => typeof bp.startPush === 'function').map((bp) =>
+    bp.startPush(gladys, config),
+  );
+}
+
+function stopPushSubscriptions() {
+  for (const cleanup of pushCleanups) {
+    try {
+      cleanup?.();
+    } catch (err) {
+      logger.error('Push subscription cleanup failed', err);
+    }
+  }
+  pushCleanups = [];
+}
 
 // --- Discovery: Gladys asks for the list of devices --------------------------
 gladys.onScanRequest(async () => {
@@ -38,16 +55,6 @@ gladys.onScanRequest(async () => {
 gladys.onSetValue(async (device, feature) => {
   // Throw: the SDK sends a success:false acknowledgement to Gladys.
   throw new Error(`Speedtest sensors are read-only (${feature.external_id})`);
-});
-
-// --- Polling: Gladys asks to refresh the device -> run a speed test ----------
-gladys.onPoll(async (device) => {
-  const blueprint = findBlueprintByDevice(gladys, device);
-  if (!blueprint || typeof blueprint.onPoll !== 'function') {
-    logger.debug(`onPoll ignored (no polling) for ${device.external_id}`);
-    return;
-  }
-  await blueprint.onPoll(gladys, config);
 });
 
 // --- Manifest actions: buttons in the Configuration screen -------------------
@@ -64,9 +71,10 @@ for (const blueprint of DEVICE_BLUEPRINTS) {
 gladys.onConfigUpdated(async (newConfig) => {
   logger.info('onConfigUpdated -> new configuration received');
   config = normalizeConfig(newConfig);
-  // Re-publish the device: poll_frequency (schedule on/off, interval) depends
-  // on it. publishDiscoveredDevices is idempotent (upsert by external_id).
+  // publishDiscoveredDevices is idempotent (upsert by external_id).
   await gladys.publishDiscoveredDevices(buildDiscoveredDevices(gladys, config));
+  // The schedule (on/off, interval) depends on the config: restart it.
+  startPushSubscriptions();
 });
 
 // --- Connection lifecycle ----------------------------------------------------
@@ -81,7 +89,10 @@ gladys.on('connected', async () => {
     // 2) (Re)publish the device as soon as we are connected.
     await gladys.publishDiscoveredDevices(buildDiscoveredDevices(gladys, config));
 
-    // 3) Report the application-level status, shown in the Configuration
+    // 3) Start (or restart) the internal test scheduler.
+    startPushSubscriptions();
+
+    // 4) Report the application-level status, shown in the Configuration
     // screen. Distinct from the container state machine: an integration can
     // be RUNNING and still disconnected from its third-party service.
     await gladys.setConnectionStatus(true);
@@ -96,11 +107,16 @@ gladys.on('connected', async () => {
   }
 });
 
+gladys.on('disconnected', () => {
+  stopPushSubscriptions();
+});
+
 // --- Graceful shutdown -------------------------------------------------------
 // The SDK disconnects cleanly and exits with code 0 when the supervisor stops
 // the container (SIGTERM/SIGINT).
 gladys.handleShutdown((signal) => {
   logger.info(`Received ${signal} -> graceful shutdown`);
+  stopPushSubscriptions();
 });
 
 // --- Startup -----------------------------------------------------------------

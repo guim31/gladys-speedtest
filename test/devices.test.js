@@ -79,19 +79,62 @@ test('the device carries the four expected read-only sensors', () => {
   }
 });
 
-test('poll_frequency follows the auto_test toggle', () => {
+test('the device never declares a poll_frequency (Gladys caps polling at 60 s)', () => {
   const gladys = createFakeGladys();
-  const on = speedtest.buildDevice(gladys, normalizeConfig({ poll_frequency: 7200 }));
-  assert.equal(on.poll_frequency, 7200);
-  const off = speedtest.buildDevice(gladys, normalizeConfig({ auto_test: false }));
-  assert.equal(off.poll_frequency, undefined, 'no poll_frequency when auto tests are disabled');
+  const device = speedtest.buildDevice(gladys, config);
+  assert.equal(device.poll_frequency, undefined);
 });
 
-test('onPoll runs a test and publishes the four states', async () => {
+test('startPush schedules a test every poll_frequency seconds', async (t) => {
+  t.mock.timers.enable({ apis: ['setInterval'] });
+  const gladys = createFakeGladys();
+  let calls = 0;
+  setEngineForTests({
+    runSpeedtest: async () => {
+      calls += 1;
+      return FAKE_RESULT;
+    },
+  });
+
+  const stop = speedtest.startPush(gladys, normalizeConfig({ poll_frequency: 3600 }));
+  t.mock.timers.tick(3600 * 1000);
+  await Promise.resolve(); // let the async run settle
+  assert.equal(calls, 1, 'one test after one interval');
+
+  stop();
+  t.mock.timers.tick(3600 * 1000);
+  assert.equal(calls, 1, 'no test after the schedule is stopped');
+});
+
+test('startPush is a no-op when automatic tests are disabled', (t) => {
+  t.mock.timers.enable({ apis: ['setInterval'] });
+  const gladys = createFakeGladys();
+  let calls = 0;
+  setEngineForTests({
+    runSpeedtest: async () => {
+      calls += 1;
+      return FAKE_RESULT;
+    },
+  });
+
+  const stop = speedtest.startPush(gladys, normalizeConfig({ auto_test: false }));
+  t.mock.timers.tick(86400 * 1000);
+  assert.equal(calls, 0);
+  stop();
+});
+
+test('a scheduled run publishes the four states', async (t) => {
+  t.mock.timers.enable({ apis: ['setInterval'] });
   const gladys = createFakeGladys();
   setEngineForTests({ runSpeedtest: async () => FAKE_RESULT });
 
-  await speedtest.onPoll(gladys, config);
+  const stop = speedtest.startPush(gladys, config);
+  t.mock.timers.tick(config.poll_frequency * 1000);
+  stop();
+  // Drain the microtask chain of the async run (engine -> publishStates).
+  for (let i = 0; i < 10; i += 1) {
+    await Promise.resolve();
+  }
 
   assert.equal(gladys.published.length, 4);
   const byId = Object.fromEntries(gladys.published.map((p) => [p.featureExternalId, p.state]));
@@ -114,11 +157,11 @@ test('concurrent runs share a single engine invocation', async () => {
   });
 
   await Promise.all([
-    speedtest.onPoll(gladys, config),
+    speedtest.actions.run_speedtest(gladys, { fields: {}, config }),
     speedtest.actions.run_speedtest(gladys, { fields: {}, config }),
   ]);
 
-  assert.equal(calls, 1, 'the manual action must reuse the poll already in flight');
+  assert.equal(calls, 1, 'the second action must reuse the run already in flight');
   assert.equal(gladys.published.length, 4, 'states are published once');
 });
 

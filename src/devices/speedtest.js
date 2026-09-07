@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------------
 // Device type: SPEEDTEST
-// A single virtual device carrying four read-only sensors, refreshed by
-// polling: download / upload bitrate (Mbit/s), ping and jitter (ms).
+// A single virtual device carrying four read-only sensors, refreshed by an
+// internal schedule: download / upload bitrate (Mbit/s), ping and jitter (ms).
 // The heavy lifting lives in src/speedtest.js (the engine).
 // -----------------------------------------------------------------------------
 
@@ -79,9 +79,9 @@ export const speedtest = {
     return {
       name: 'Speedtest',
       external_id: ids.device,
-      // Automatic tests are plain Gladys polling; omitting poll_frequency
-      // disables them, leaving only the manual action.
-      ...(config.auto_test ? { poll_frequency: config.poll_frequency } : {}),
+      // No poll_frequency: Gladys polling only accepts sub-minute intervals
+      // (60000 ms max), useless for an hourly test. The schedule lives in
+      // startPush() below, inside the container.
       features: [
         {
           name: 'Download',
@@ -135,9 +135,23 @@ export const speedtest = {
     };
   },
 
-  async onPoll(gladys, config) {
-    logger.info('Scheduled speed test starting...');
-    await runAndPublish(gladys, config);
+  // Internal scheduler (the "push subscription" of this integration): one
+  // test every poll_frequency seconds. The first automatic run happens after
+  // a full interval — the manual button covers the "right now" need, and a
+  // config save must not silently burn hundreds of MB.
+  startPush(gladys, config) {
+    if (!config.auto_test) {
+      logger.info('Automatic tests disabled');
+      return () => {};
+    }
+    logger.info(`Automatic test scheduled every ${config.poll_frequency} s`);
+    const timer = setInterval(() => {
+      logger.info('Scheduled speed test starting...');
+      runAndPublish(gladys, config).catch((err) => {
+        logger.error('Scheduled speed test failed', err);
+      });
+    }, config.poll_frequency * 1000);
+    return () => clearInterval(timer);
   },
 
   // Manifest actions (buttons in the Configuration screen).
