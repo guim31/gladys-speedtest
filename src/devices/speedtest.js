@@ -74,7 +74,7 @@ export const speedtest = {
     return gladys.externalIds(DEVICE_TYPE, PLATFORM_DEVICE_ID).device;
   },
 
-  buildDevice(gladys, config) {
+  buildDevice(gladys, _config) {
     const ids = gladys.externalIds(DEVICE_TYPE, PLATFORM_DEVICE_ID);
     return {
       name: 'Speedtest',
