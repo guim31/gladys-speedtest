@@ -12,6 +12,14 @@ import {
   DEVICE_FEATURE_UNITS,
 } from '@gladysassistant/integration-sdk';
 import * as defaultEngine from '../speedtest.js';
+import { createResultStore } from '../store.js';
+import {
+  ALREADY_RUNNING_TOAST,
+  WIDGET,
+  WIDGET_ACTION,
+  buildSpeedContent,
+  resultToast,
+} from '../widgets.js';
 
 const DEVICE_TYPE = 'speedtest';
 
@@ -36,9 +44,40 @@ export function setEngineForTests(fakeEngine) {
   engine = fakeEngine ?? defaultEngine;
 }
 
+// The last result, kept in /data so the widget is filled after a restart.
+// Tests point the store at a temporary folder.
+let store = createResultStore();
+let lastResult = store.load();
+export function setStoreForTests(fakeStore) {
+  store = fakeStore ?? createResultStore();
+  lastResult = store.load();
+}
+
 // A speed test saturates the link for ~25 s: never run two at once. The
 // pending run is shared, so a manual action during a poll reuses its result.
 let currentRun = null;
+
+/** Whether a test is under way (the widget shows it). */
+export function isRunning() {
+  return currentRun !== null;
+}
+
+/** The last result known (see store.js), null when none. */
+export function getLastResult() {
+  return lastResult;
+}
+
+/**
+ * Ask the core to re-pull the widget: a fire-and-forget nudge, rate-limited
+ * core-side, that a Gladys older than 5.1 (or a test double) may not offer.
+ */
+function refreshWidget(gladys) {
+  try {
+    gladys.requestWidgetRefresh?.(WIDGET.SPEED);
+  } catch (err) {
+    logger.debug(`Widget refresh request failed: ${err.message}`);
+  }
+}
 
 /**
  * Run one speed test (unless one is already running) and publish the four
@@ -58,12 +97,18 @@ async function runAndPublish(gladys, config) {
       { device_feature_external_id: ids.feature(FEATURE.PING), state: result.ping },
       { device_feature_external_id: ids.feature(FEATURE.JITTER), state: result.jitter },
     ]);
+    lastResult = store.save({ ...result, at: new Date().toISOString() }) ?? lastResult;
     return result;
   })();
+  // The widget shows "test in progress" right away, then the result: two
+  // nudges at least 15 s apart (a test lasts ~2 × duration + 10 s), under
+  // the core's rate limit of one per 10 s.
+  refreshWidget(gladys);
   try {
     return await currentRun;
   } finally {
     currentRun = null;
+    refreshWidget(gladys);
   }
 }
 
@@ -182,6 +227,42 @@ export const speedtest = {
         en: `${currentEn} Closest servers (ID — sponsor):\n${lines}`,
         fr: `${currentFr} Serveurs les plus proches (ID — opérateur) :\n${lines}`,
       };
+    },
+  },
+
+  // Dashboard widgets (Gladys 5.1+), keyed by the widget `key` declared in
+  // gladys-assistant-integration.json: `get` resolves the content,
+  // `action` answers its buttons. Both are served from memory: no network.
+  widgets: {
+    [WIDGET.SPEED]: {
+      get(gladys, { settings, language }) {
+        const ids = gladys.externalIds(DEVICE_TYPE, PLATFORM_DEVICE_ID);
+        return buildSpeedContent({
+          features: {
+            download: ids.feature(FEATURE.DOWNLOAD),
+            upload: ids.feature(FEATURE.UPLOAD),
+            ping: ids.feature(FEATURE.PING),
+            jitter: ids.feature(FEATURE.JITTER),
+          },
+          lastResult,
+          running: isRunning(),
+          settings,
+          language,
+        });
+      },
+
+      async action(gladys, { actionKey, config }) {
+        if (actionKey !== WIDGET_ACTION.RUN_TEST) {
+          throw new Error(`Unknown widget action "${actionKey}"`);
+        }
+        if (isRunning()) {
+          // Politely decline: the running test will refresh the widget by
+          // itself when it ends.
+          return ALREADY_RUNNING_TOAST;
+        }
+        logger.info('Speed test requested from the dashboard widget');
+        return resultToast(await runAndPublish(gladys, config));
+      },
     },
   },
 };

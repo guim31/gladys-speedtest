@@ -1,16 +1,42 @@
-import { test, afterEach } from 'node:test';
+import { test, afterEach, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { DEVICE_FEATURE_CATEGORIES, DEVICE_FEATURE_UNITS } from '@gladysassistant/integration-sdk';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import {
+  DEVICE_FEATURE_CATEGORIES,
+  DEVICE_FEATURE_UNITS,
+  validateWidgetContent,
+} from '@gladysassistant/integration-sdk';
 import {
   DEVICE_BLUEPRINTS,
   buildDiscoveredDevices,
   findBlueprintByDevice,
 } from '../src/devices/index.js';
-import { speedtest, setEngineForTests } from '../src/devices/speedtest.js';
+import {
+  speedtest,
+  setEngineForTests,
+  setStoreForTests,
+  getLastResult,
+  isRunning,
+} from '../src/devices/speedtest.js';
 import { normalizeConfig } from '../src/config.js';
+import { createResultStore } from '../src/store.js';
+import { ALREADY_RUNNING_TOAST, WIDGET, WIDGET_ACTION } from '../src/widgets.js';
 import { createFakeGladys } from './helpers/fakeGladys.js';
 
 const config = normalizeConfig();
+
+// The last result is persisted: keep the tests out of /data.
+let dataDir;
+before(async () => {
+  dataDir = await mkdtemp(path.join(tmpdir(), 'speedtest-devices-'));
+  setStoreForTests(createResultStore(dataDir));
+});
+after(async () => {
+  setStoreForTests(null);
+  await rm(dataDir, { recursive: true, force: true });
+});
 
 const FAKE_RESULT = {
   ping: 12.3,
@@ -191,4 +217,118 @@ test('the list_servers action lists IDs and reflects the configured server', asy
     config: normalizeConfig({ server_id: '32565' }),
   });
   assert.match(pinned.fr, /Serveur configuré : 32565/);
+});
+
+test('a finished run persists the last result and nudges the widget twice', async () => {
+  const gladys = createFakeGladys();
+  setEngineForTests({ runSpeedtest: async () => FAKE_RESULT });
+
+  await speedtest.actions.run_speedtest(gladys, { fields: {}, config });
+
+  const last = getLastResult();
+  assert.equal(last.download, FAKE_RESULT.download);
+  assert.equal(last.server.sponsor, 'Free');
+  assert.ok(Date.now() - new Date(last.at).getTime() < 5_000, 'stamped at the end of the run');
+  // The widget sees the start (test in progress) and the end (the result).
+  assert.deepEqual(gladys.widgetRefreshes, [WIDGET.SPEED, WIDGET.SPEED]);
+  // A restart reads the same result back from the data directory.
+  assert.deepEqual(createResultStore(dataDir).load(), last);
+  assert.equal(isRunning(), false);
+});
+
+test('a failed run keeps the previous result and still nudges the widget', async () => {
+  const gladys = createFakeGladys();
+  const before = getLastResult();
+  setEngineForTests({
+    runSpeedtest: async () => {
+      throw new Error('server down');
+    },
+  });
+
+  await assert.rejects(speedtest.actions.run_speedtest(gladys, { fields: {}, config }), /down/);
+  assert.deepEqual(getLastResult(), before);
+  assert.deepEqual(gladys.widgetRefreshes, [WIDGET.SPEED, WIDGET.SPEED]);
+  assert.equal(isRunning(), false);
+});
+
+test('the speed widget content is valid and bound to the published features', () => {
+  const gladys = createFakeGladys();
+  const widget = speedtest.widgets[WIDGET.SPEED];
+  const content = widget.get(gladys, { settings: { chart: 'latency' }, language: 'fr' });
+  assert.deepEqual(validateWidgetContent(content), []);
+
+  const device = speedtest.buildDevice(gladys, config);
+  const published = new Set(device.features.map((f) => f.external_id));
+  const bound = content.components.flatMap((c) => [
+    ...(c.device_feature ? [c.device_feature] : []),
+    ...(c.device_features ?? []),
+  ]);
+  assert.equal(bound.length, 6, 'four tiles and a two-feature chart');
+  for (const id of bound) {
+    assert.ok(published.has(id), `${id} is a published feature`);
+  }
+});
+
+test('the widget button runs a test and toasts the result', async () => {
+  const gladys = createFakeGladys();
+  setEngineForTests({ runSpeedtest: async () => FAKE_RESULT });
+  const widget = speedtest.widgets[WIDGET.SPEED];
+
+  const toast = await widget.action(gladys, {
+    actionKey: WIDGET_ACTION.RUN_TEST,
+    params: {},
+    settings: {},
+    config,
+  });
+  assert.match(toast.fr, /842\.5 Mbit\/s/);
+  assert.match(toast.fr, /Free · Marseille/);
+  assert.ok(toast.en.length <= 200);
+  assert.equal(gladys.published.length, 4, 'the sensors are published as for any run');
+});
+
+test('the widget button declines politely while a test runs', async () => {
+  const gladys = createFakeGladys();
+  let release;
+  setEngineForTests({
+    runSpeedtest: () =>
+      new Promise((resolve) => {
+        release = () => resolve(FAKE_RESULT);
+      }),
+  });
+  const widget = speedtest.widgets[WIDGET.SPEED];
+
+  const first = widget.action(gladys, { actionKey: WIDGET_ACTION.RUN_TEST, config });
+  await Promise.resolve();
+  assert.equal(isRunning(), true);
+  const content = widget.get(gladys, { settings: {}, language: 'en' });
+  assert.equal(content.ttl_seconds, 10);
+  assert.equal(
+    content.components.find((c) => c.type === 'status').items.at(-1).value.en,
+    'Test in progress',
+  );
+
+  const second = await widget.action(gladys, { actionKey: WIDGET_ACTION.RUN_TEST, config });
+  assert.deepEqual(second, ALREADY_RUNNING_TOAST);
+
+  release();
+  await first;
+  assert.equal(isRunning(), false);
+  assert.equal(widget.get(gladys, { settings: {} }).ttl_seconds, 300);
+});
+
+test('an unknown widget action is refused', async () => {
+  const gladys = createFakeGladys();
+  const widget = speedtest.widgets[WIDGET.SPEED];
+  await assert.rejects(
+    widget.action(gladys, { actionKey: 'nope', config }),
+    /Unknown widget action/,
+  );
+});
+
+test('a Gladys without requestWidgetRefresh (older core) does not break a run', async () => {
+  const gladys = createFakeGladys();
+  delete gladys.requestWidgetRefresh;
+  setEngineForTests({ runSpeedtest: async () => FAKE_RESULT });
+  const message = await speedtest.actions.run_speedtest(gladys, { fields: {}, config });
+  assert.match(message.en, /842\.5/);
 });

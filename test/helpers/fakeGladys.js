@@ -7,6 +7,7 @@
 //   - publishCameraImage             -> record calls so tests can assert them
 //   - publishTransports              -> record calls so tests can assert them
 //   - setConnectionStatus            -> record calls so tests can assert them
+//   - requestWidgetRefresh           -> record calls so tests can assert them
 // This lets us test the pure "wiring" logic (discovery payloads, dispatch)
 // without a running Gladys server or a real WebSocket.
 // -----------------------------------------------------------------------------
@@ -16,12 +17,14 @@ export function createFakeGladys() {
   const cameraImages = [];
   const transports = [];
   const connectionStatuses = [];
+  const widgetRefreshes = [];
 
   return {
     published,
     cameraImages,
     transports,
     connectionStatuses,
+    widgetRefreshes,
 
     externalIds(type, platformId) {
       const device = `${type}:${platformId}`;
@@ -51,6 +54,10 @@ export function createFakeGladys() {
 
     async setConnectionStatus(connected, message) {
       connectionStatuses.push({ connected, message });
+    },
+
+    requestWidgetRefresh(key) {
+      widgetRefreshes.push(key);
     },
   };
 }
