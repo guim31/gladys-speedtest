@@ -37,6 +37,36 @@ coller dans le champ **ID du serveur**.
   défaut : un test par heure). Le bouton **Lancer un test de débit** fonctionne
   à tout moment.
 
+## Widget de tableau de bord
+
+Avec Gladys 5.1 ou plus récent, l'intégration ajoute un widget **Débit
+Internet** à l'éditeur de tableau de bord (**Ajouter un widget →
+Speedtest.net**). Il montre :
+
+- quatre tuiles en direct — débit descendant, débit montant, ping et gigue —
+  qui suivent les capteurs dès qu'un test les publie ;
+- un graphique de l'historique de deux d'entre eux : **Graphique** choisit
+  _Débits descendant et montant_ (par défaut) ou _Ping et gigue_, **Fenêtre
+  d'historique** les dernières 24 heures, la dernière semaine (par défaut) ou
+  le dernier mois ;
+- la date du dernier test et le serveur Speedtest.net utilisé (opérateur et
+  ville), et _Test en cours_ pendant qu'un test tourne ;
+- un bouton **Lancer un test**. Le résultat s'affiche en notification à la fin
+  du test (environ une demi-minute). Appuyer pendant qu'un test tourne déjà
+  n'en lance pas un second.
+
+À savoir :
+
+- Les tuiles et le graphique lisent les capteurs de l'appareil : ajoutez-le à
+  Gladys (**Intégrations → Speedtest.net → Découverte**) pour qu'ils se
+  remplissent.
+- La date et le serveur du dernier test sont conservés par l'intégration :
+  juste après une mise à jour ou un redémarrage, avant tout test, le widget le
+  dit, tandis que les tuiles gardent les dernières valeurs enregistrées par
+  Gladys.
+- Les fenêtres du graphique et l'historique long suivent vos réglages Gladys
+  de conservation des données des appareils.
+
 ## Dépannage
 
 - _Résultats plus bas que l'application officielle_ : augmentez **Connexions

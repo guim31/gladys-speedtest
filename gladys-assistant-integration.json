@@ -8,7 +8,7 @@
   },
   "version": "1.0.2",
   "docker_image": "ghcr.io/guim31/gladys-speedtest:1.0.2",
-  "gladys_version": ">=4.86.0",
+  "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-speedtest/main/cover.png",
   "categories": ["network", "services"],
   "transports": ["cloud"],
@@ -130,6 +130,90 @@
         "fr": "Lister les serveurs proches"
       },
       "timeout_seconds": 30
+    }
+  ],
+  "widgets": [
+    {
+      "key": "speed",
+      "label": {
+        "en": "Internet speed",
+        "fr": "Débit Internet"
+      },
+      "description": {
+        "en": "Download, upload, ping and jitter, their history, the last test and a button to run one.",
+        "fr": "Débits, ping et gigue, leur historique, le dernier test et un bouton pour en lancer un."
+      },
+      "icon": "activity",
+      "settings": [
+        {
+          "key": "chart",
+          "type": "select",
+          "label": {
+            "en": "Chart",
+            "fr": "Graphique"
+          },
+          "description": {
+            "en": "Which pair of sensors the chart draws.",
+            "fr": "La paire de capteurs tracée par le graphique."
+          },
+          "required": false,
+          "default": "speeds",
+          "options": [
+            {
+              "value": "speeds",
+              "label": {
+                "en": "Download and upload",
+                "fr": "Débits descendant et montant"
+              }
+            },
+            {
+              "value": "latency",
+              "label": {
+                "en": "Ping and jitter",
+                "fr": "Ping et gigue"
+              }
+            }
+          ]
+        },
+        {
+          "key": "interval",
+          "type": "select",
+          "label": {
+            "en": "History window",
+            "fr": "Fenêtre d'historique"
+          },
+          "description": {
+            "en": "How far back the chart goes.",
+            "fr": "Jusqu'où remonte le graphique."
+          },
+          "required": false,
+          "default": "last-week",
+          "options": [
+            {
+              "value": "last-day",
+              "label": {
+                "en": "Last 24 hours",
+                "fr": "Dernières 24 heures"
+              }
+            },
+            {
+              "value": "last-week",
+              "label": {
+                "en": "Last week",
+                "fr": "Dernière semaine"
+              }
+            },
+            {
+              "value": "last-month",
+              "label": {
+                "en": "Last month",
+                "fr": "Dernier mois"
+              }
+            }
+          ]
+        }
+      ],
+      "action_timeout_seconds": 120
     }
   ]
 }
