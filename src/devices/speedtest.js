@@ -89,6 +89,8 @@ async function runAndPublish(gladys, config) {
     return currentRun;
   }
   currentRun = (async () => {
+    // "Last test" dates the launch of the test, not its end.
+    const at = new Date().toISOString();
     const result = await engine.runSpeedtest(config);
     const ids = gladys.externalIds(DEVICE_TYPE, PLATFORM_DEVICE_ID);
     await gladys.publishStates([
@@ -97,12 +99,13 @@ async function runAndPublish(gladys, config) {
       { device_feature_external_id: ids.feature(FEATURE.PING), state: result.ping },
       { device_feature_external_id: ids.feature(FEATURE.JITTER), state: result.jitter },
     ]);
-    lastResult = store.save({ ...result, at: new Date().toISOString() }) ?? lastResult;
+    lastResult = store.save({ ...result, at }) ?? lastResult;
     return result;
   })();
   // The widget shows "test in progress" right away, then the result: two
-  // nudges at least 15 s apart (a test lasts ~2 × duration + 10 s), under
-  // the core's rate limit of one per 10 s.
+  // nudges at least ~14 s apart (a test lasts ~2 × (2 s warmup + duration)
+  // plus the ping samples: ~15 s at the minimum duration of 5 s, ~24 s by
+  // default), under the core's rate limit of one per 10 s.
   refreshWidget(gladys);
   try {
     return await currentRun;

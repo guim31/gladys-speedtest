@@ -202,7 +202,7 @@ test('speed: empty state — no result and no test running is an explicit text',
   assert.equal(byType(content, 'status').length, 0);
   const [text] = byType(content, 'text');
   assert.equal(text.variant, 'body');
-  assert.match(text.fr ?? text.text.fr, /Aucun résultat/);
+  assert.match(text.text.fr, /Aucun résultat/);
   // The live tiles and the chart stay: Gladys keeps the history even when
   // the container forgot (first start after an update).
   assert.equal(byType(content, 'value').length, 4);

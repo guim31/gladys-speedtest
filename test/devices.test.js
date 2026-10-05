@@ -228,7 +228,7 @@ test('a finished run persists the last result and nudges the widget twice', asyn
   const last = getLastResult();
   assert.equal(last.download, FAKE_RESULT.download);
   assert.equal(last.server.sponsor, 'Free');
-  assert.ok(Date.now() - new Date(last.at).getTime() < 5_000, 'stamped at the end of the run');
+  assert.ok(Date.now() - new Date(last.at).getTime() < 5_000, 'stamped at the launch of the run');
   // The widget sees the start (test in progress) and the end (the result).
   assert.deepEqual(gladys.widgetRefreshes, [WIDGET.SPEED, WIDGET.SPEED]);
   // A restart reads the same result back from the data directory.

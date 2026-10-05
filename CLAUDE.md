@@ -30,19 +30,22 @@ toast du bouton, et `/data/last-result.json` relu après redémarrage.
   temporaire via `setStoreForTests`.
 - `requestWidgetRefresh('speed')` est appelé **au début et à la fin** de chaque test (le brief ne
   demandait que la fin) : le widget passe à « Test en cours » (`ttl_seconds` 10) puis au résultat
-  (`ttl_seconds` 300). Un test dure au moins 20 s, donc les deux appels tiennent sous la limite du
-  cœur (1 par 10 s) ; un moteur qui échoue en moins de 10 s perd la seconde demande, et c'est le
-  ttl de 10 s qui rattrape.
+  (`ttl_seconds` 300). Un test dure ~2 × (2 s de chauffe + `duration`) plus les pings : ~15 s au
+  minimum (`duration` 5), ~24 s par défaut, donc les deux appels tiennent sous la limite du cœur
+  (1 par 10 s) ; un moteur qui échoue en moins de 10 s perd la seconde demande, et c'est le ttl de
+  10 s qui rattrape.
 - Le bouton reste affiché pendant un test, avec l'icône `loader` au lieu de `play` (jamais le
   style `primary`) ; l'action répond alors par un toast poli sans relancer de test
   (`currentRun` partagé avec le bouton de configuration et le planificateur).
 - L'action du widget **attend la fin du test** et renvoie le résultat en toast
-  (`action_timeout_seconds` 120 : 2 × 20 s + 10 s + sélection du serveur).
+  (`action_timeout_seconds` 120 : ~2 × (2 + 20) s au maximum, plus les pings et la sélection du
+  serveur).
 - État vide (pas de résultat en mémoire, pas de test en cours) : un `text` body, mais les tuiles,
   le graphique et le bouton restent, car Gladys garde l'historique même quand le conteneur l'a
   oublié (premier démarrage après la mise à jour depuis 1.0.2).
 - « Dernier test » : « à l'instant » / « il y a n min » sous une heure, sinon date courte
-  localisée par `Intl.DateTimeFormat` (fuseau : `TZ` injecté par le superviseur). « Serveur » :
+  localisée par `Intl.DateTimeFormat` (fuseau : `TZ` injecté par le superviseur) ; la date est
+  celle du lancement du test, pas de sa fin. « Serveur » :
   `sponsor · name` (opérateur · ville) coupé à 40 caractères.
 - Clés figées : widget `speed`, action `run_test`, réglages `chart` (`speeds`, `latency`) et
   `interval` (`last-day`, `last-week`, `last-month`).
