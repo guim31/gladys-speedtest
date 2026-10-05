@@ -2,16 +2,50 @@
 
 Mesurez périodiquement le débit de votre connexion via les serveurs Speedtest.net.
 
-Intégration externe pour [Gladys Assistant](https://gladysassistant.com), bâtie sur le template officiel `GladysAssistant/integration-template-js` (SDK `@gladysassistant/integration-sdk` ^0.13.0, `gladys_version` `>=4.86.0`). Mainteneur : Guilhem (`guim31`).
+Intégration externe pour [Gladys Assistant](https://gladysassistant.com), bâtie sur le template officiel `GladysAssistant/integration-template-js` (SDK `@gladysassistant/integration-sdk` ^0.14.0, `gladys_version` `>=5.1.0`). Mainteneur : Guilhem (`guim31`).
 
 Ce fichier rassemble ce qu'une session de code doit savoir et qui ne se lit pas dans le code : choix de conception, faits vérifiés en réel, pièges déjà payés. Le compléter quand un nouveau piège est découvert.
 
-## État au 02/10/2026
+## État au 05/10/2026
 
 Version 1.0.2 publiée, indexée dans le store. Un appareil virtuel et quatre capteurs historisés :
 débit descendant et montant (Mbit/s), ping et gigue (ms). Moteur en JavaScript pur, validé en réel
 sur une fibre gigabit (environ 920 et 850 Mbit/s), pour une mémoire résidente d'environ 178 Mo
 dans une sandbox Gladys de 256 Mo : surveiller la mémoire à chaque changement du moteur.
+
+Branche `feat/dashboard-widgets` (PR brouillon, non publiée) : SDK 0.14, `gladys_version`
+`>=5.1.0` et un widget de tableau de bord `speed` (« Débit Internet »), **jamais vu tourner dans
+une vraie Gladys** : seuls les tests, le lint et le validateur du store sont passés. À vérifier en
+réel : le rendu des tuiles liées avant que l'appareil soit ajouté, la fenêtre de l'historique, le
+toast du bouton, et `/data/last-result.json` relu après redémarrage.
+
+## Widget `speed` : choix de conception
+
+- Les quatre tuiles et le graphique sont **liés aux fonctionnalités** (`device_feature`,
+  `device_features`) : ils vivent sans travail et le contenu ne coûte aucun appel réseau. Le
+  contenu ne porte que ce que le cœur ne sait pas : la date du dernier test et le serveur Ookla.
+- Le dernier résultat est persisté dans `/data/last-result.json` (`src/store.js`, écriture
+  atomique, meilleur effort) et relu au démarrage, pour renseigner le widget après un redémarrage.
+  En local, `SPEEDTEST_DATA_DIR` pointe le store ailleurs ; les tests utilisent un dossier
+  temporaire via `setStoreForTests`.
+- `requestWidgetRefresh('speed')` est appelé **au début et à la fin** de chaque test (le brief ne
+  demandait que la fin) : le widget passe à « Test en cours » (`ttl_seconds` 10) puis au résultat
+  (`ttl_seconds` 300). Un test dure au moins 20 s, donc les deux appels tiennent sous la limite du
+  cœur (1 par 10 s) ; un moteur qui échoue en moins de 10 s perd la seconde demande, et c'est le
+  ttl de 10 s qui rattrape.
+- Le bouton reste affiché pendant un test, avec l'icône `loader` au lieu de `play` (jamais le
+  style `primary`) ; l'action répond alors par un toast poli sans relancer de test
+  (`currentRun` partagé avec le bouton de configuration et le planificateur).
+- L'action du widget **attend la fin du test** et renvoie le résultat en toast
+  (`action_timeout_seconds` 120 : 2 × 20 s + 10 s + sélection du serveur).
+- État vide (pas de résultat en mémoire, pas de test en cours) : un `text` body, mais les tuiles,
+  le graphique et le bouton restent, car Gladys garde l'historique même quand le conteneur l'a
+  oublié (premier démarrage après la mise à jour depuis 1.0.2).
+- « Dernier test » : « à l'instant » / « il y a n min » sous une heure, sinon date courte
+  localisée par `Intl.DateTimeFormat` (fuseau : `TZ` injecté par le superviseur). « Serveur » :
+  `sponsor · name` (opérateur · ville) coupé à 40 caractères.
+- Clés figées : widget `speed`, action `run_test`, réglages `chart` (`speeds`, `latency`) et
+  `interval` (`last-day`, `last-week`, `last-month`).
 
 ## Pièges du protocole OoklaServer
 
@@ -101,6 +135,13 @@ Vérifiés dans le code du cœur ou payés sur une intégration publiée. Ils va
 - **Les clés de widgets, de déclencheurs et d'actions sont figées une fois publiées.**
 - Passer `gladys_version` à `>=5.1.0` coupe les mises à jour des cœurs plus anciens, qui
   refusent les champs inconnus du manifeste.
+- Le passage du SDK 0.13 à 0.14 n'a rien cassé ici : la suite existante passe telle quelle.
+- Une ligne de `status` exige un `value` (nombre ou texte ≤ 40) : un état seul se met dans le
+  `value`, avec un libellé générique (« État »), pas l'inverse.
+- `validateWidgetContent` ne vérifie pas que les `external_id` liés existent : le test croise le
+  contenu avec `buildDevice` pour s'en assurer.
+- Le validateur du store exige Node ≥ 24 dans son `engines`, mais tourne sous Node 22 avec un
+  simple avertissement.
 
 ## Publication et store
 

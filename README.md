@@ -6,8 +6,9 @@ measures your internet connection on a schedule against
 Home Assistant's popular Speedtest.net integration.
 
 One virtual device, four historized sensors: **download** (Mbit/s), **upload**
-(Mbit/s), **ping** (ms) and **jitter** (ms). Chart them on your dashboard,
-trigger scenes when the line degrades, spot a 4G failover taking over.
+(Mbit/s), **ping** (ms) and **jitter** (ms), and a dashboard widget. Chart them
+on your dashboard, trigger scenes when the line degrades, spot a 4G failover
+taking over.
 
 ![Cover](cover.png)
 
@@ -36,6 +37,29 @@ OoklaServer replies **500 to any request without a `User-Agent`**, and upload
 throughput needs **big write chunks + keep-alive connections**, otherwise the
 event loop (not the line) is what you measure.
 
+## Dashboard widget
+
+Gladys 5.1+ renders third-party widgets from a declarative vocabulary (SDK
+0.14). The integration declares one, `speed` (**Internet speed** / **Débit
+Internet**):
+
+| Shows                                             | Bound to                                       |
+| ------------------------------------------------- | ---------------------------------------------- |
+| Four tiles: download, upload, ping, jitter        | the device features (live, no refresh)         |
+| A history chart                                   | two features, per the `chart` setting          |
+| Last test (date), server (operator · city)        | `/data/last-result.json`, kept across restarts |
+| _Test in progress_ (info color) while a test runs | the shared `currentRun` of the device module   |
+| A **Run a test** button                           | the widget action `run_test` (toast ≤ 200)     |
+
+Settings: `chart` (`speeds` = download + upload, default; `latency` = ping +
+jitter) and `interval` (`last-day`, `last-week` default, `last-month`). The
+content costs no network call: it is built from memory, with a `ttl_seconds`
+of 10 while a test runs and 300 otherwise, and nudged by
+`requestWidgetRefresh` when a test starts and ends. Builders live in
+`src/widgets.js` (pure, validated by `validateWidgetContent` in the tests);
+the last result is persisted by `src/store.js` in `/data` (locally:
+`SPEEDTEST_DATA_DIR`).
+
 ## Development
 
 ```bash
@@ -48,8 +72,8 @@ npm run format    # prettier
 The integration follows the official
 [integration-template-js](https://github.com/GladysAssistant/integration-template-js)
 layout: `index.js` wires the SDK, `src/devices/speedtest.js` declares the
-device and its actions, `gladys-assistant-integration.json` is the manifest the
-store indexer reads.
+device, its actions and its widget, `gladys-assistant-integration.json` is the
+manifest the store indexer reads.
 
 ## Release
 
