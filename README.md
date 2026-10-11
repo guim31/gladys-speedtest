@@ -45,9 +45,9 @@ Internet**):
 
 | Shows                                             | Bound to                                       |
 | ------------------------------------------------- | ---------------------------------------------- |
-| Four tiles: download, upload, ping, jitter        | the device features (live, no refresh)         |
-| A history chart                                   | two features, per the `chart` setting          |
-| Last test (date), server (operator · city)        | `/data/last-result.json`, kept across restarts |
+| Two tiles: download, upload (717 Mb/s, 1.2 Gb/s)  | the last result, formatted by the widget       |
+| A history area chart                              | two features, per the `chart` setting          |
+| Ping, jitter, last test (date), server            | `/data/last-result.json`, kept across restarts |
 | _Test in progress_ (info color) while a test runs | the shared `currentRun` of the device module   |
 | A **Run a test** button                           | the widget action `run_test` (toast ≤ 200)     |
 

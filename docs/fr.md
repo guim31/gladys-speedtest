@@ -43,27 +43,27 @@ Avec Gladys 5.1 ou plus récent, l'intégration ajoute un widget **Débit
 Internet** à l'éditeur de tableau de bord (**Ajouter un widget →
 Speedtest.net**). Il montre :
 
-- quatre tuiles en direct — débit descendant, débit montant, ping et gigue —
-  qui suivent les capteurs dès qu'un test les publie ;
-- un graphique de l'historique de deux d'entre eux : **Graphique** choisit
+- deux tuiles côte à côte, débit descendant et débit montant : en Mb/s
+  entiers, ou en Gb/s avec une décimale au-delà de 1 000 Mb/s (1,2 Gb/s) ;
+- un graphique en aires de l'historique de deux capteurs : **Graphique** choisit
   _Débits descendant et montant_ (par défaut) ou _Ping et gigue_, **Fenêtre
   d'historique** les dernières 24 heures, la dernière semaine (par défaut) ou
   le dernier mois ;
-- la date du dernier test et le serveur Speedtest.net utilisé (opérateur et
-  ville), et _Test en cours_ pendant qu'un test tourne ;
+- le ping et la gigue du dernier test, sa date et le serveur Speedtest.net
+  utilisé (opérateur et ville), et _Test en cours_ pendant qu'un test tourne ;
 - un bouton **Lancer un test**. Le résultat s'affiche en notification à la fin
   du test (environ une demi-minute). Appuyer pendant qu'un test tourne déjà
   n'en lance pas un second.
 
 À savoir :
 
-- Les tuiles et le graphique lisent les capteurs de l'appareil : ajoutez-le à
-  Gladys (**Intégrations → Speedtest.net → Découverte**) pour qu'ils se
-  remplissent.
-- La date et le serveur du dernier test sont conservés par l'intégration :
-  juste après une mise à jour ou un redémarrage, avant tout test, le widget le
-  dit, tandis que les tuiles gardent les dernières valeurs enregistrées par
-  Gladys.
+- Le graphique lit les capteurs de l'appareil : ajoutez-le à Gladys
+  (**Intégrations → Speedtest.net → Découverte**) pour qu'il se remplisse.
+- Le widget n'arrondit que ce qu'il affiche : Gladys garde les valeurs
+  mesurées, décimales comprises, dans les capteurs et leur historique.
+- Le dernier résultat est conservé par l'intégration d'un redémarrage à
+  l'autre. Avant le premier test, les tuiles affichent un tiret et le widget
+  indique qu'aucun résultat n'est encore connu.
 - Les fenêtres du graphique et l'historique long suivent vos réglages Gladys
   de conservation des données des appareils.
 

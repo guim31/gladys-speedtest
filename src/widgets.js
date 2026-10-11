@@ -1,15 +1,18 @@
 // -----------------------------------------------------------------------------
 // Dashboard widget (Gladys 5.1+), content builders — pure functions.
 //
-//   - speed : the connection at a glance: four live tiles bound to the sensors
-//             (download, upload, ping, jitter), a history chart of two of them
-//             (a widget setting picks the pair and the window), when the last
-//             test ran and against which server, and a button to run one.
+//   - speed : the connection at a glance: two tiles (download, upload), a
+//             history area chart of two sensors (a widget setting picks the
+//             pair and the window), then ping, jitter, when the last test ran
+//             and against which server as status rows, and a button to run one.
 //
-// Everything that moves is bound to the device features: the tiles and the
-// chart follow the published states over the core's real-time path, so the
-// content only changes when a test starts or ends (requestWidgetRefresh) —
-// building it costs no network call. The `primary` button style is never
+// The two tiles carry the figures of the last result, formatted here: a tile
+// bound to a feature shows the core's "716.6 Mbit/s", which the tile cuts on
+// a phone (see SPEED_TILE_* below). Ping and jitter go to status rows, so the
+// tiles fill one line two by two and never leave one alone on a second line.
+// The content changes when a test starts or ends (requestWidgetRefresh), the
+// chart reads the history Gladys keeps — building it costs no network call.
+// The `primary` button style is never
 // used (Gladys paints it like the others in dark mode): a test under way is
 // shown by the button icon and a status row in the `info` color.
 // -----------------------------------------------------------------------------
@@ -42,6 +45,26 @@ export const TTL_IDLE_SECONDS = 300;
 // Bounds of the core vocabulary the builders fit their texts to.
 const STATUS_VALUE_MAX = 40;
 const TOAST_MAX = 200;
+
+/** The chart type of both chart settings (core WIDGET_CHART_TYPES). */
+export const CHART_TYPE = 'area';
+
+// What a speed tile holds without being cut, in the core front 5.1.4
+// (external-widget/style.css). A tile is `flex: 1 1 96px` (border-box) in a
+// wrapping row with an 8px gap, 8px of side padding and a 1px border: two
+// tiles sit side by side from a 200px-wide card body up, each then at least
+// 96px wide, so 96 - 2 × 8 - 2 × 1 = 78px for its text; below 200px each
+// tile takes the whole line, wider still. The value is 1.25rem (20px)
+// semibold, the unit 0.75rem (12px), 2px apart. Rendered in Chromium with
+// that CSS, "838 Mb/s" takes 61px in Arial metrics and 72px in DejaVu Sans
+// (a wide font, for the margin); "10,0 Gb/s" takes 79px in DejaVu Sans, one
+// too many. Hence 3 characters for the value and 4 for the unit, and
+// test/widgets.test.js holds every formatted speed to them.
+export const SPEED_TILE_VALUE_MAX = 3;
+export const SPEED_TILE_UNIT_MAX = 4;
+
+/** The tile of a speed not measured yet. */
+const NO_VALUE = '—';
 
 /** Every text of the widget, in the four languages (test/i18n.test.js). */
 export const TEXTS = {
@@ -77,8 +100,8 @@ export const TEXTS = {
   },
 };
 
-/** The locale of the dates, per language. */
-const DATE_LOCALES = { en: 'en-GB', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' };
+/** The locale of the dates and figures, per language. */
+const LOCALES = { en: 'en-GB', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' };
 
 /**
  * The language of a widget: Gladys sends the user's, the texts exist in four.
@@ -135,7 +158,7 @@ export function formatLastTest(at, { language = 'en', now = new Date(), timeZone
   if (minutes >= 1 && minutes < 60) {
     return format(TEXTS.minutesAgo, { n: minutes })[lang];
   }
-  const formatted = new Intl.DateTimeFormat(DATE_LOCALES[lang], {
+  const formatted = new Intl.DateTimeFormat(LOCALES[lang], {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -156,6 +179,62 @@ export function formatServer(server) {
     return server?.id ? fit(`#${server.id}`, STATUS_VALUE_MAX) : null;
   }
   return fit(parts.join(' · '), STATUS_VALUE_MAX);
+}
+
+/**
+ * A speed as a tile shows it: whole Mb/s below 1 000, Gb/s with one decimal
+ * in the language's format beyond (1,2 Gb/s), whole Gb/s from 10 Gb/s (the
+ * tile has room for 3 characters), a dash when unknown. Only the
+ * widget rounds: the states published to Gladys keep their decimals.
+ * @param {number|null|undefined} mbps the speed in Mbit/s
+ * @param {string} [language] `en`, `fr`, `de` or `es`
+ * @returns {{ value: string, unit?: string }}
+ */
+export function formatSpeed(mbps, language = 'en') {
+  if (typeof mbps !== 'number' || !Number.isFinite(mbps) || mbps < 0) {
+    return { value: NO_VALUE };
+  }
+  const rounded = Math.round(mbps);
+  if (rounded < 1000) {
+    return { value: String(rounded), unit: 'Mb/s' };
+  }
+  const gbps = mbps / 1000;
+  const digits = Math.round(gbps * 10) / 10 < 10 ? 1 : 0;
+  const value = new Intl.NumberFormat(LOCALES[widgetLanguage(language)], {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(gbps);
+  return { value, unit: 'Gb/s' };
+}
+
+/**
+ * A latency as a status row shows it: one decimal at most, in the
+ * language's format ("14,5 ms").
+ * @param {number|null|undefined} ms the latency in milliseconds
+ * @param {string} [language] `en`, `fr`, `de` or `es`
+ * @returns {string|null} null when unknown
+ */
+export function formatLatency(ms, language = 'en') {
+  if (typeof ms !== 'number' || !Number.isFinite(ms) || ms < 0) {
+    return null;
+  }
+  const value = new Intl.NumberFormat(LOCALES[widgetLanguage(language)], {
+    maximumFractionDigits: 1,
+  }).format(ms);
+  return fit(`${value} ms`, STATUS_VALUE_MAX);
+}
+
+/**
+ * A speed tile.
+ * @param {Record<string, string>} label the tile label
+ * @param {string} icon the tile icon
+ * @param {number|null|undefined} mbps the speed in Mbit/s
+ * @param {string} language the widget language
+ * @returns {object} a `value` component
+ */
+function speedTile(label, icon, mbps, language) {
+  const { value, unit } = formatSpeed(mbps, language);
+  return { type: 'value', label, icon, value, ...(unit ? { unit } : {}) };
 }
 
 /**
@@ -183,16 +262,14 @@ export function buildSpeedContent({
   const { chart, interval } = normalizeSettings(settings);
   const lang = widgetLanguage(language);
   const components = [
-    { type: 'value', label: TEXTS.download, icon: 'download', device_feature: features.download },
-    { type: 'value', label: TEXTS.upload, icon: 'upload', device_feature: features.upload },
-    { type: 'value', label: TEXTS.ping, icon: 'clock', device_feature: features.ping },
-    { type: 'value', label: TEXTS.jitter, icon: 'activity', device_feature: features.jitter },
+    speedTile(TEXTS.download, 'download', lastResult?.download, lang),
+    speedTile(TEXTS.upload, 'upload', lastResult?.upload, lang),
     chart === 'latency'
       ? {
           type: 'chart',
           device_features: [features.ping, features.jitter],
           interval,
-          chart_type: 'line',
+          chart_type: CHART_TYPE,
           title: TEXTS.latencyChart,
           unit: 'ms',
         }
@@ -200,14 +277,22 @@ export function buildSpeedContent({
           type: 'chart',
           device_features: [features.download, features.upload],
           interval,
-          chart_type: 'line',
+          chart_type: CHART_TYPE,
           title: TEXTS.speedsChart,
-          unit: 'Mbit/s',
+          unit: 'Mb/s',
         },
   ];
 
   const items = [];
   if (lastResult) {
+    const ping = formatLatency(lastResult.ping, lang);
+    if (ping) {
+      items.push({ label: TEXTS.ping, value: ping, icon: 'clock' });
+    }
+    const jitter = formatLatency(lastResult.jitter, lang);
+    if (jitter) {
+      items.push({ label: TEXTS.jitter, value: jitter, icon: 'activity' });
+    }
     items.push({
       label: TEXTS.lastTest,
       value: formatLastTest(lastResult.at, { language: lang, now, timeZone }),

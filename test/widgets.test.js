@@ -8,17 +8,22 @@ import assert from 'node:assert/strict';
 import { validateWidgetContent, WIDGET_COLORS } from '@gladysassistant/integration-sdk';
 import {
   ALREADY_RUNNING_TOAST,
+  CHART_TYPE,
   CHARTS,
   DEFAULT_CHART,
   DEFAULT_INTERVAL,
   INTERVALS,
+  SPEED_TILE_UNIT_MAX,
+  SPEED_TILE_VALUE_MAX,
   TTL_IDLE_SECONDS,
   TTL_RUNNING_SECONDS,
   WIDGET_ACTION,
   buildSpeedContent,
   fit,
   formatLastTest,
+  formatLatency,
   formatServer,
+  formatSpeed,
   normalizeSettings,
   resultToast,
   widgetLanguage,
@@ -111,7 +116,51 @@ test('formatServer: "sponsor · city", the id alone as a fallback, null when unk
   assert.ok(formatServer({ sponsor: 'x'.repeat(30), name: 'y'.repeat(30) }).length <= 40);
 });
 
-test('speed: nominal content — four live tiles, a speeds chart, status, button', () => {
+test('formatSpeed: whole Mb/s below 1 000, Gb/s with one localized decimal beyond', () => {
+  assert.deepEqual(formatSpeed(716.6, 'fr'), { value: '717', unit: 'Mb/s' });
+  assert.deepEqual(formatSpeed(838.4, 'fr'), { value: '838', unit: 'Mb/s' });
+  assert.deepEqual(formatSpeed(0.4, 'en'), { value: '0', unit: 'Mb/s' });
+  assert.deepEqual(formatSpeed(999.4, 'en'), { value: '999', unit: 'Mb/s' });
+  // 999.5 rounds to 1 000: no "1000 Mb/s", already Gb/s.
+  assert.deepEqual(formatSpeed(999.5, 'en'), { value: '1.0', unit: 'Gb/s' });
+  assert.deepEqual(formatSpeed(1234, 'fr'), { value: '1,2', unit: 'Gb/s' });
+  assert.deepEqual(formatSpeed(1234, 'en'), { value: '1.2', unit: 'Gb/s' });
+  assert.deepEqual(formatSpeed(1234, 'de'), { value: '1,2', unit: 'Gb/s' });
+  assert.deepEqual(formatSpeed(1234, 'es'), { value: '1,2', unit: 'Gb/s' });
+  assert.deepEqual(formatSpeed(8000, 'fr'), { value: '8,0', unit: 'Gb/s' });
+  assert.deepEqual(formatSpeed(9949, 'fr'), { value: '9,9', unit: 'Gb/s' });
+  // From 10 Gb/s, whole Gb/s: "10,0" would not fit the tile.
+  assert.deepEqual(formatSpeed(9950, 'fr'), { value: '10', unit: 'Gb/s' });
+  assert.deepEqual(formatSpeed(25_000, 'en'), { value: '25', unit: 'Gb/s' });
+  assert.deepEqual(formatSpeed(null, 'fr'), { value: '—' });
+  assert.deepEqual(formatSpeed(undefined, 'fr'), { value: '—' });
+  assert.deepEqual(formatSpeed(Number.NaN, 'fr'), { value: '—' });
+});
+
+test('formatSpeed never overflows a tile (SPEED_TILE_* from the core CSS)', () => {
+  // Every speed up to 100 Gb/s, every language.
+  const speeds = [0, 0.4, 9.5, 99.5, 716.6, 999.49, 999.5, 1000, 1049, 1050, 9949, 9950, 99_499];
+  for (let mbps = 0; mbps <= 12_000; mbps += 0.5) speeds.push(mbps);
+  for (let mbps = 12_000; mbps <= 100_000; mbps += 7) speeds.push(mbps);
+  for (const language of ['en', 'fr', 'de', 'es']) {
+    for (const mbps of speeds) {
+      const { value, unit = '' } = formatSpeed(mbps, language);
+      assert.ok(value.length <= SPEED_TILE_VALUE_MAX, `${language} ${mbps}: "${value}"`);
+      assert.ok(unit.length <= SPEED_TILE_UNIT_MAX, `${language} ${mbps}: "${unit}"`);
+    }
+  }
+});
+
+test('formatLatency: one decimal at most, in the language format', () => {
+  assert.equal(formatLatency(14.53, 'fr'), '14,5 ms');
+  assert.equal(formatLatency(14.53, 'en'), '14.5 ms');
+  assert.equal(formatLatency(0.2, 'de'), '0,2 ms');
+  assert.equal(formatLatency(3, 'es'), '3 ms');
+  assert.equal(formatLatency(null, 'fr'), null);
+  assert.ok(formatLatency(99999.99, 'fr').length <= 40);
+});
+
+test('speed: nominal content — two speed tiles, an area chart, status rows, button', () => {
   const content = buildSpeedContent({
     features: FEATURES,
     lastResult: LAST_RESULT,
@@ -125,30 +174,45 @@ test('speed: nominal content — four live tiles, a speeds chart, status, button
   assert.equal(content.ttl_seconds, TTL_IDLE_SECONDS);
   assert.ok(content.components.length <= 8);
 
-  const tiles = byType(content, 'value');
+  // The layout, in the order the front renders its slots.
   assert.deepEqual(
-    tiles.map((t) => t.device_feature),
-    [FEATURES.download, FEATURES.upload, FEATURES.ping, FEATURES.jitter],
+    content.components.map((c) => c.type),
+    ['value', 'value', 'chart', 'status', 'button'],
   );
+
+  // Two tiles, never three or four: they share one line (or stack one by
+  // one in a column under 200px), never leave one alone on a second line.
+  const tiles = byType(content, 'value');
+  assert.equal(tiles.length, 2);
   assert.deepEqual(
-    tiles.map((t) => t.icon),
-    ['download', 'upload', 'clock', 'activity'],
+    tiles.map((t) => [t.label.fr, t.icon, t.value, t.unit]),
+    [
+      ['Descendant', 'download', '921', 'Mb/s'],
+      ['Montant', 'upload', '848', 'Mb/s'],
+    ],
   );
   for (const tile of tiles) {
-    assert.equal(tile.value, undefined, 'live tiles carry no inline value');
+    assert.equal(tile.device_feature, undefined, 'the core rendering of a feature is cut');
+    assert.ok(tile.value.length <= SPEED_TILE_VALUE_MAX);
+    assert.ok(tile.unit.length <= SPEED_TILE_UNIT_MAX);
   }
 
   const [chart] = byType(content, 'chart');
   assert.deepEqual(chart.device_features, [FEATURES.download, FEATURES.upload]);
   assert.equal(chart.interval, DEFAULT_INTERVAL);
-  assert.equal(chart.unit, 'Mbit/s');
+  assert.equal(chart.chart_type, 'area');
+  assert.equal(chart.unit, 'Mb/s');
 
   const [status] = byType(content, 'status');
-  assert.equal(status.items.length, 2);
-  assert.equal(status.items[0].label.fr, 'Dernier test');
-  assert.equal(status.items[0].value, 'il y a 25 min');
-  assert.equal(status.items[1].label.fr, 'Serveur');
-  assert.equal(status.items[1].value, 'Free · Marseille');
+  assert.deepEqual(
+    status.items.map((item) => [item.label.fr, item.value, item.icon]),
+    [
+      ['Ping', '3,1 ms', 'clock'],
+      ['Gigue', '0,4 ms', 'activity'],
+      ['Dernier test', 'il y a 25 min', 'calendar'],
+      ['Serveur', 'Free · Marseille', 'server'],
+    ],
+  );
   assert.equal(byType(content, 'text').length, 0, 'no empty-state text with a result');
 
   const [button] = byType(content, 'button');
@@ -156,6 +220,34 @@ test('speed: nominal content — four live tiles, a speeds chart, status, button
   assert.equal(button.icon, 'play');
   assert.equal(button.style, undefined, 'never the primary style (invisible in dark mode)');
   assert.equal(button.label.fr, 'Lancer un test');
+});
+
+test('speed: beyond 1 000 Mb/s the tiles switch to Gb/s', () => {
+  const content = buildSpeedContent({
+    features: FEATURES,
+    lastResult: { ...LAST_RESULT, download: 1234.5, upload: 716.6 },
+    running: false,
+    language: 'fr',
+    now: NOW,
+  });
+  assert.deepEqual(validateWidgetContent(content), []);
+  assert.deepEqual(
+    byType(content, 'value').map((t) => `${t.value} ${t.unit}`),
+    ['1,2 Gb/s', '717 Mb/s'],
+  );
+});
+
+test('speed: the budget of the core is kept in every state', () => {
+  for (const running of [false, true]) {
+    for (const lastResult of [LAST_RESULT, null]) {
+      const content = buildSpeedContent({ features: FEATURES, lastResult, running, now: NOW });
+      const count = (types) => content.components.filter((c) => types.includes(c.type)).length;
+      assert.ok(content.components.length <= 8);
+      assert.ok(count(['text']) <= 2);
+      assert.ok(count(['button']) <= 4);
+      assert.equal(count(['value', 'gauge']), 2, 'two tiles: no orphan on a second line');
+    }
+  }
 });
 
 test('speed: the chart setting switches to ping and jitter, with the interval', () => {
@@ -171,6 +263,8 @@ test('speed: the chart setting switches to ping and jitter, with the interval', 
   const [chart] = byType(content, 'chart');
   assert.deepEqual(chart.device_features, [FEATURES.ping, FEATURES.jitter]);
   assert.equal(chart.interval, 'last-month');
+  assert.equal(chart.chart_type, 'area');
+  assert.equal(chart.chart_type, CHART_TYPE);
   assert.equal(chart.unit, 'ms');
   assert.equal(byType(content, 'chart').length, 1, 'one focal component');
 });
@@ -207,9 +301,15 @@ test('speed: empty state — no result and no test running is an explicit text',
   const [text] = byType(content, 'text');
   assert.equal(text.variant, 'body');
   assert.match(text.text.fr, /Aucun résultat/);
-  // The live tiles and the chart stay: Gladys keeps the history even when
-  // the container forgot (first start after an update).
-  assert.equal(byType(content, 'value').length, 4);
+  // The tiles show a dash, the chart stays: Gladys keeps the history even
+  // when the container forgot it.
+  assert.deepEqual(
+    byType(content, 'value').map((t) => [t.value, t.unit]),
+    [
+      ['—', undefined],
+      ['—', undefined],
+    ],
+  );
   assert.equal(byType(content, 'chart').length, 1);
   assert.equal(byType(content, 'button').length, 1);
 });
@@ -223,10 +323,17 @@ test('speed: running with no previous result shows the status row only', () => {
   assert.equal(byType(content, 'text').length, 0);
 });
 
-test('speed: a stored result with an unknown server shows the date only', () => {
+test('speed: a stored result with unknown figures and server shows the date only', () => {
   const content = buildSpeedContent({
     features: FEATURES,
-    lastResult: { ...LAST_RESULT, server: { id: null, sponsor: null, name: null, country: null } },
+    lastResult: {
+      ...LAST_RESULT,
+      download: null,
+      upload: null,
+      ping: null,
+      jitter: null,
+      server: { id: null, sponsor: null, name: null, country: null },
+    },
     running: false,
     now: NOW,
   });
@@ -234,6 +341,10 @@ test('speed: a stored result with an unknown server shows the date only', () => 
   const [status] = byType(content, 'status');
   assert.equal(status.items.length, 1);
   assert.equal(status.items[0].label.en, 'Last test');
+  assert.deepEqual(
+    byType(content, 'value').map((t) => t.value),
+    ['—', '—'],
+  );
 });
 
 test('speed: every text exists in English and French, within the core bounds', () => {
