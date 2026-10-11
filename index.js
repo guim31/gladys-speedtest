@@ -17,6 +17,7 @@
 
 import { GladysIntegration, logger } from '@gladysassistant/integration-sdk';
 import { normalizeConfig } from './src/config.js';
+import { INIT_FAILED_STATUS } from './src/i18n.js';
 import { DEVICE_BLUEPRINTS, buildDiscoveredDevices } from './src/devices/index.js';
 
 const gladys = new GladysIntegration();
@@ -115,12 +116,7 @@ gladys.on('connected', async () => {
     await gladys.setConnectionStatus(true);
   } catch (err) {
     logger.error('Post-connection initialization failed', err);
-    await gladys
-      .setConnectionStatus(false, {
-        en: 'Initialization failed, check the integration logs.',
-        fr: "L'initialisation a échoué, consultez les logs de l'intégration.",
-      })
-      .catch(() => {});
+    await gladys.setConnectionStatus(false, INIT_FAILED_STATUS).catch(() => {});
   }
 });
 

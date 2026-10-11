@@ -200,6 +200,8 @@ test('the run_speedtest action returns a multi-language summary', async () => {
   assert.match(message.en, /512\.25/);
   assert.match(message.fr, /12\.3/);
   assert.match(message.fr, /Free, Marseille/);
+  assert.match(message.de, /\(Server: Free, Marseille\)/);
+  assert.match(message.es, /\(servidor: Free, Marseille\)/);
 });
 
 test('the list_servers action lists IDs and reflects the configured server', async () => {
@@ -217,6 +219,8 @@ test('the list_servers action lists IDs and reflects the configured server', asy
     config: normalizeConfig({ server_id: '32565' }),
   });
   assert.match(pinned.fr, /Serveur configuré : 32565/);
+  assert.match(pinned.de, /Konfigurierter Server: 32565/);
+  assert.match(auto.es, /32565 — Free \(Marseille, France\)/);
 });
 
 test('a finished run persists the last result and nudges the widget twice', async () => {

@@ -47,7 +47,9 @@ const byType = (content, type) => content.components.filter((c) => c.type === ty
 test('widgetLanguage falls back to English', () => {
   assert.equal(widgetLanguage('fr'), 'fr');
   assert.equal(widgetLanguage('en'), 'en');
-  assert.equal(widgetLanguage('de'), 'en');
+  assert.equal(widgetLanguage('de'), 'de');
+  assert.equal(widgetLanguage('es'), 'es');
+  assert.equal(widgetLanguage('it'), 'en');
   assert.equal(widgetLanguage(undefined), 'en');
 });
 
@@ -79,6 +81,8 @@ test('formatLastTest: relative under an hour, short localized date beyond, ≤ 4
   assert.equal(formatLastTest('2026-10-05T14:29:40Z', { ...base, language: 'en' }), 'just now');
   assert.equal(formatLastTest(LAST_RESULT.at, { ...base, language: 'fr' }), 'il y a 25 min');
   assert.equal(formatLastTest(LAST_RESULT.at, { ...base, language: 'en' }), '25 min ago');
+  assert.equal(formatLastTest(LAST_RESULT.at, { ...base, language: 'de' }), 'vor 25 Min.');
+  assert.equal(formatLastTest(LAST_RESULT.at, { ...base, language: 'es' }), 'hace 25 min');
 
   const olderFr = formatLastTest('2026-10-04T08:05:00Z', { ...base, language: 'fr' });
   const olderEn = formatLastTest('2026-10-04T08:05:00Z', { ...base, language: 'en' });

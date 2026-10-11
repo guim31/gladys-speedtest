@@ -50,6 +50,22 @@ toast du bouton, et `/data/last-result.json` relu après redémarrage.
 - Clés figées : widget `speed`, action `run_test`, réglages `chart` (`speeds`, `latency`) et
   `interval` (`last-day`, `last-week`, `last-month`).
 
+## Langues
+
+- Tous les textes envoyés à Gladys existent en **`en`, `fr`, `de` et `es`**, les quatre langues de
+  l'interface du cœur ; Gladys retombe sur l'anglais pour une langue absente. `src/i18n.js` porte
+  la liste (`LANGUAGES`), `format()` remplit les `{placeholders}` ; `test/i18n.test.js` échoue sur
+  un objet du manifeste ou une table du code qui n'a pas exactement ces quatre langues, ou dont un
+  texte est vide ou trop long. Vocabulaire : celui de `front/src/config/i18n/{de,es}.json`
+  du cœur. Registre : l'allemand **tutoie** (« du », impératif « starte »), comme la majorité des
+  écrans du cœur et toutes les intégrations de guim31 ; l'espagnol vouvoie (« usted »). Le test
+  refuse « Sie », « Ihr », « Ihre »… en majuscule dans un texte `de`.
+- Restent en anglais : les noms des fonctionnalités (`Download`, `Upload`, `Ping`, `Jitter`), figés
+  à la création et sans réglage de langue, et les erreurs du moteur, que le SDK transmet en simple
+  chaîne (`e.message`).
+- La doc reste en `docs/en.md` et `docs/fr.md` : l'indexeur du store (5.1.4 / `DOCS_LANGUAGES`)
+  ne réhéberge que ces deux langues, et le cœur retombe sur `en` pour les autres.
+
 ## Pièges du protocole OoklaServer
 
 - Un POST sans `User-Agent` reçoit un 500 immédiat. Comme la réponse arrive avant l'envoi du
