@@ -4,7 +4,9 @@
   "name": "Speedtest.net",
   "description": {
     "en": "Measure your internet speed on a schedule using Speedtest.net servers.",
-    "fr": "Mesurez périodiquement le débit de votre connexion via les serveurs Speedtest.net."
+    "fr": "Mesurez périodiquement le débit de votre connexion via les serveurs Speedtest.net.",
+    "de": "Messen Sie regelmäßig Ihre Internetgeschwindigkeit über die Server von Speedtest.net.",
+    "es": "Mida periódicamente la velocidad de su conexión con los servidores de Speedtest.net."
   },
   "version": "1.1.0",
   "docker_image": "ghcr.io/guim31/gladys-speedtest:1.1.0",
@@ -18,18 +20,24 @@
       "type": "section",
       "label": {
         "en": "How it works",
-        "fr": "Fonctionnement"
+        "fr": "Fonctionnement",
+        "de": "Funktionsweise",
+        "es": "Funcionamiento"
       },
       "description": {
         "en": "A test saturates your connection for about 25 seconds and can transfer several hundred MB per run: mind your data cap when choosing the interval. Results are stored as four sensors (download, upload, ping, jitter) you can chart and use in scenes.",
-        "fr": "Un test sature la connexion pendant environ 25 secondes et peut transférer plusieurs centaines de Mo : tenez compte de votre quota de données en choisissant l'intervalle. Les résultats alimentent quatre capteurs (débits, ping, gigue) exploitables en graphiques et dans les scènes."
+        "fr": "Un test sature la connexion pendant environ 25 secondes et peut transférer plusieurs centaines de Mo : tenez compte de votre quota de données en choisissant l'intervalle. Les résultats alimentent quatre capteurs (débits, ping, gigue) exploitables en graphiques et dans les scènes.",
+        "de": "Ein Test lastet Ihre Verbindung etwa 25 Sekunden lang voll aus und kann pro Durchlauf mehrere hundert MB übertragen: Denken Sie bei der Wahl des Intervalls an Ihr Datenvolumen. Die Ergebnisse landen in vier Sensoren (Download, Upload, Ping, Jitter), die Sie in Diagrammen und Szenen nutzen können.",
+        "es": "Una prueba satura la conexión durante unos 25 segundos y puede transferir varios cientos de MB: tenga en cuenta su límite de datos al elegir el intervalo. Los resultados alimentan cuatro sensores (descarga, subida, ping, jitter) que puede usar en gráficos y escenas."
       },
       "links": [
         {
           "url": "https://www.speedtest.net/",
           "label": {
             "en": "Speedtest.net",
-            "fr": "Speedtest.net"
+            "fr": "Speedtest.net",
+            "de": "Speedtest.net",
+            "es": "Speedtest.net"
           }
         }
       ]
@@ -39,11 +47,15 @@
       "type": "boolean",
       "label": {
         "en": "Run tests automatically",
-        "fr": "Lancer les tests automatiquement"
+        "fr": "Lancer les tests automatiquement",
+        "de": "Tests automatisch ausführen",
+        "es": "Ejecutar las pruebas automáticamente"
       },
       "description": {
         "en": "When disabled, tests only run through the manual button below.",
-        "fr": "Désactivé, les tests ne partent que via le bouton manuel ci-dessous."
+        "fr": "Désactivé, les tests ne partent que via le bouton manuel ci-dessous.",
+        "de": "Wenn deaktiviert, starten Tests nur über die Schaltfläche unten.",
+        "es": "Si está desactivado, las pruebas solo se inician con el botón manual de abajo."
       },
       "required": false,
       "default": true
@@ -53,11 +65,15 @@
       "type": "number",
       "label": {
         "en": "Interval between tests (s)",
-        "fr": "Intervalle entre les tests (s)"
+        "fr": "Intervalle entre les tests (s)",
+        "de": "Intervall zwischen Tests (s)",
+        "es": "Intervalo entre pruebas (s)"
       },
       "description": {
         "en": "Seconds between automatic tests. 3600 = one test per hour.",
-        "fr": "Secondes entre deux tests automatiques. 3600 = un test par heure."
+        "fr": "Secondes entre deux tests automatiques. 3600 = un test par heure.",
+        "de": "Sekunden zwischen zwei automatischen Tests. 3600 = ein Test pro Stunde.",
+        "es": "Segundos entre dos pruebas automáticas. 3600 = una prueba por hora."
       },
       "required": false,
       "default": 3600,
@@ -69,16 +85,22 @@
       "type": "string",
       "label": {
         "en": "Server ID (optional)",
-        "fr": "ID du serveur (optionnel)"
+        "fr": "ID du serveur (optionnel)",
+        "de": "Server-ID (optional)",
+        "es": "ID del servidor (opcional)"
       },
       "description": {
         "en": "Leave empty to auto-select the closest healthy server. Use the \"List nearby servers\" button to find IDs.",
-        "fr": "Laissez vide pour choisir automatiquement le meilleur serveur proche. Le bouton « Lister les serveurs proches » donne les ID."
+        "fr": "Laissez vide pour choisir automatiquement le meilleur serveur proche. Le bouton « Lister les serveurs proches » donne les ID.",
+        "de": "Leer lassen, um automatisch den nächstgelegenen funktionierenden Server zu wählen. Die Schaltfläche „Server in der Nähe auflisten“ zeigt die IDs.",
+        "es": "Deje en blanco para elegir automáticamente el mejor servidor cercano. El botón «Listar servidores cercanos» muestra los ID."
       },
       "required": false,
       "placeholder": {
         "en": "32565",
-        "fr": "32565"
+        "fr": "32565",
+        "de": "32565",
+        "es": "32565"
       }
     },
     {
@@ -86,11 +108,15 @@
       "type": "number",
       "label": {
         "en": "Parallel connections",
-        "fr": "Connexions parallèles"
+        "fr": "Connexions parallèles",
+        "de": "Parallele Verbindungen",
+        "es": "Conexiones paralelas"
       },
       "description": {
         "en": "TCP connections per direction. More connections fill fast links better.",
-        "fr": "Connexions TCP par sens de mesure. Plus il y en a, mieux les liens rapides sont remplis."
+        "fr": "Connexions TCP par sens de mesure. Plus il y en a, mieux les liens rapides sont remplis.",
+        "de": "TCP-Verbindungen pro Richtung. Mehr Verbindungen lasten schnelle Leitungen besser aus.",
+        "es": "Conexiones TCP por sentido. Cuantas más haya, mejor se aprovechan las líneas rápidas."
       },
       "required": false,
       "default": 4,
@@ -102,11 +128,15 @@
       "type": "number",
       "label": {
         "en": "Measurement time per direction (s)",
-        "fr": "Durée de mesure par sens (s)"
+        "fr": "Durée de mesure par sens (s)",
+        "de": "Messdauer pro Richtung (s)",
+        "es": "Duración de medición por sentido (s)"
       },
       "description": {
         "en": "Longer measurements are steadier but transfer more data.",
-        "fr": "Une mesure plus longue est plus stable mais transfère plus de données."
+        "fr": "Une mesure plus longue est plus stable mais transfère plus de données.",
+        "de": "Längere Messungen sind stabiler, übertragen aber mehr Daten.",
+        "es": "Una medición más larga es más estable, pero transfiere más datos."
       },
       "required": false,
       "default": 10,
@@ -119,7 +149,9 @@
       "key": "run_speedtest",
       "label": {
         "en": "Run a speed test now",
-        "fr": "Lancer un test de débit"
+        "fr": "Lancer un test de débit",
+        "de": "Geschwindigkeitstest starten",
+        "es": "Iniciar una prueba de velocidad"
       },
       "timeout_seconds": 90
     },
@@ -127,7 +159,9 @@
       "key": "list_servers",
       "label": {
         "en": "List nearby servers",
-        "fr": "Lister les serveurs proches"
+        "fr": "Lister les serveurs proches",
+        "de": "Server in der Nähe auflisten",
+        "es": "Listar servidores cercanos"
       },
       "timeout_seconds": 30
     }
@@ -137,11 +171,15 @@
       "key": "speed",
       "label": {
         "en": "Internet speed",
-        "fr": "Débit Internet"
+        "fr": "Débit Internet",
+        "de": "Internetgeschwindigkeit",
+        "es": "Velocidad de Internet"
       },
       "description": {
         "en": "Download, upload, ping and jitter, their history, the last test and a button to run one.",
-        "fr": "Débits, ping et gigue, leur historique, le dernier test et un bouton pour en lancer un."
+        "fr": "Débits, ping et gigue, leur historique, le dernier test et un bouton pour en lancer un.",
+        "de": "Download, Upload, Ping und Jitter, ihr Verlauf, der letzte Test und eine Schaltfläche zum Starten.",
+        "es": "Descarga, subida, ping y jitter, su historial, la última prueba y un botón para iniciar una."
       },
       "icon": "activity",
       "settings": [
@@ -150,11 +188,15 @@
           "type": "select",
           "label": {
             "en": "Chart",
-            "fr": "Graphique"
+            "fr": "Graphique",
+            "de": "Diagramm",
+            "es": "Gráfico"
           },
           "description": {
             "en": "Which pair of sensors the chart draws.",
-            "fr": "La paire de capteurs tracée par le graphique."
+            "fr": "La paire de capteurs tracée par le graphique.",
+            "de": "Welches Sensorpaar das Diagramm anzeigt.",
+            "es": "El par de sensores que muestra el gráfico."
           },
           "required": false,
           "default": "speeds",
@@ -163,14 +205,18 @@
               "value": "speeds",
               "label": {
                 "en": "Download and upload",
-                "fr": "Débits descendant et montant"
+                "fr": "Débits descendant et montant",
+                "de": "Download und Upload",
+                "es": "Descarga y subida"
               }
             },
             {
               "value": "latency",
               "label": {
                 "en": "Ping and jitter",
-                "fr": "Ping et gigue"
+                "fr": "Ping et gigue",
+                "de": "Ping und Jitter",
+                "es": "Ping y jitter"
               }
             }
           ]
@@ -180,11 +226,15 @@
           "type": "select",
           "label": {
             "en": "History window",
-            "fr": "Fenêtre d'historique"
+            "fr": "Fenêtre d'historique",
+            "de": "Verlaufszeitraum",
+            "es": "Periodo del historial"
           },
           "description": {
             "en": "How far back the chart goes.",
-            "fr": "Jusqu'où remonte le graphique."
+            "fr": "Jusqu'où remonte le graphique.",
+            "de": "Wie weit das Diagramm zurückreicht.",
+            "es": "Hasta dónde se remonta el gráfico."
           },
           "required": false,
           "default": "last-week",
@@ -193,21 +243,27 @@
               "value": "last-day",
               "label": {
                 "en": "Last 24 hours",
-                "fr": "Dernières 24 heures"
+                "fr": "Dernières 24 heures",
+                "de": "Letzte 24 Stunden",
+                "es": "Últimas 24 horas"
               }
             },
             {
               "value": "last-week",
               "label": {
                 "en": "Last week",
-                "fr": "Dernière semaine"
+                "fr": "Dernière semaine",
+                "de": "Letzte Woche",
+                "es": "Última semana"
               }
             },
             {
               "value": "last-month",
               "label": {
                 "en": "Last month",
-                "fr": "Dernier mois"
+                "fr": "Dernier mois",
+                "de": "Letzter Monat",
+                "es": "Último mes"
               }
             }
           ]

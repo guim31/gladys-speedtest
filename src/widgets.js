@@ -15,6 +15,7 @@
 // -----------------------------------------------------------------------------
 
 import { WIDGET_COLORS } from '@gladysassistant/integration-sdk';
+import { LANGUAGES, format, pickLanguage } from './i18n.js';
 
 /** Widget keys, declared in the manifest `widgets` (forever: never rename). */
 export const WIDGET = {
@@ -42,32 +43,50 @@ export const TTL_IDLE_SECONDS = 300;
 const STATUS_VALUE_MAX = 40;
 const TOAST_MAX = 200;
 
-const TEXTS = {
-  download: { en: 'Download', fr: 'Descendant' },
-  upload: { en: 'Upload', fr: 'Montant' },
-  ping: { en: 'Ping', fr: 'Ping' },
-  jitter: { en: 'Jitter', fr: 'Gigue' },
-  speedsChart: { en: 'Download / Upload', fr: 'Débit descendant / montant' },
-  latencyChart: { en: 'Ping / Jitter', fr: 'Ping / Gigue' },
-  lastTest: { en: 'Last test', fr: 'Dernier test' },
-  server: { en: 'Server', fr: 'Serveur' },
-  status: { en: 'Status', fr: 'État' },
-  running: { en: 'Test in progress', fr: 'Test en cours' },
-  unknown: { en: 'Unknown', fr: 'Inconnu' },
-  runTest: { en: 'Run a test', fr: 'Lancer un test' },
+/** Every text of the widget, in the four languages (test/i18n.test.js). */
+export const TEXTS = {
+  download: { en: 'Download', fr: 'Descendant', de: 'Download', es: 'Descarga' },
+  upload: { en: 'Upload', fr: 'Montant', de: 'Upload', es: 'Subida' },
+  ping: { en: 'Ping', fr: 'Ping', de: 'Ping', es: 'Ping' },
+  jitter: { en: 'Jitter', fr: 'Gigue', de: 'Jitter', es: 'Jitter' },
+  speedsChart: {
+    en: 'Download / Upload',
+    fr: 'Débit descendant / montant',
+    de: 'Download / Upload',
+    es: 'Descarga / Subida',
+  },
+  latencyChart: {
+    en: 'Ping / Jitter',
+    fr: 'Ping / Gigue',
+    de: 'Ping / Jitter',
+    es: 'Ping / Jitter',
+  },
+  lastTest: { en: 'Last test', fr: 'Dernier test', de: 'Letzter Test', es: 'Última prueba' },
+  server: { en: 'Server', fr: 'Serveur', de: 'Server', es: 'Servidor' },
+  status: { en: 'Status', fr: 'État', de: 'Status', es: 'Estado' },
+  running: { en: 'Test in progress', fr: 'Test en cours', de: 'Test läuft', es: 'Prueba en curso' },
+  unknown: { en: 'Unknown', fr: 'Inconnu', de: 'Unbekannt', es: 'Desconocido' },
+  justNow: { en: 'just now', fr: "à l'instant", de: 'gerade eben', es: 'ahora mismo' },
+  minutesAgo: { en: '{n} min ago', fr: 'il y a {n} min', de: 'vor {n} Min.', es: 'hace {n} min' },
+  runTest: { en: 'Run a test', fr: 'Lancer un test', de: 'Test starten', es: 'Iniciar prueba' },
   empty: {
     en: 'No result since the integration started: run a test, or wait for the next scheduled one.',
     fr: "Aucun résultat depuis le démarrage de l'intégration : lancez un test, ou attendez le prochain test planifié.",
+    de: 'Noch kein Ergebnis seit dem Start der Integration: Starten Sie einen Test oder warten Sie auf den nächsten geplanten.',
+    es: 'Ningún resultado desde el inicio de la integración: inicie una prueba o espere a la próxima programada.',
   },
 };
 
+/** The locale of the dates, per language. */
+const DATE_LOCALES = { en: 'en-GB', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' };
+
 /**
- * The language of a widget: Gladys sends the user's, the texts exist in two.
+ * The language of a widget: Gladys sends the user's, the texts exist in four.
  * @param {string} language the user's language
- * @returns {'fr'|'en'}
+ * @returns {'en'|'fr'|'de'|'es'}
  */
 export function widgetLanguage(language) {
-  return language === 'fr' ? 'fr' : 'en';
+  return pickLanguage(language);
 }
 
 /**
@@ -98,25 +117,25 @@ export function normalizeSettings(settings = {}) {
  * hour, a short localized date and time beyond.
  * @param {string|Date} at when the test ran
  * @param {object} [options]
- * @param {string} [options.language] `fr` or `en`
+ * @param {string} [options.language] `en`, `fr`, `de` or `es`
  * @param {Date} [options.now] the current time (tests)
  * @param {string} [options.timeZone] an IANA time zone (default: the process one, TZ)
  * @returns {string}
  */
 export function formatLastTest(at, { language = 'en', now = new Date(), timeZone } = {}) {
   const date = new Date(at);
+  const lang = widgetLanguage(language);
   if (Number.isNaN(date.getTime())) {
-    return TEXTS.unknown[widgetLanguage(language)];
+    return TEXTS.unknown[lang];
   }
-  const fr = widgetLanguage(language) === 'fr';
   const minutes = Math.floor((now.getTime() - date.getTime()) / 60_000);
   if (minutes >= 0 && minutes < 1) {
-    return fr ? "à l'instant" : 'just now';
+    return TEXTS.justNow[lang];
   }
   if (minutes >= 1 && minutes < 60) {
-    return fr ? `il y a ${minutes} min` : `${minutes} min ago`;
+    return format(TEXTS.minutesAgo, { n: minutes })[lang];
   }
-  const formatted = new Intl.DateTimeFormat(fr ? 'fr-FR' : 'en-GB', {
+  const formatted = new Intl.DateTimeFormat(DATE_LOCALES[lang], {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -229,20 +248,24 @@ export function buildSpeedContent({
 /**
  * The toast of a finished test (≤ 200 characters per language).
  * @param {{ download: number, upload: number, ping: number, server?: object }} result
- * @returns {{ en: string, fr: string }}
+ * @returns {Record<string, string>} one text per language
  */
 export function resultToast(result) {
   const { download, upload, ping } = result;
   const server = formatServer(result.server);
   const where = server ? ` · ${server}` : '';
-  return {
-    en: fit(`↓ ${download} Mbit/s · ↑ ${upload} Mbit/s · ping ${ping} ms${where}`, TOAST_MAX),
-    fr: fit(`↓ ${download} Mbit/s · ↑ ${upload} Mbit/s · ping ${ping} ms${where}`, TOAST_MAX),
-  };
+  // Figures, units and the server name read the same in every language.
+  const text = fit(
+    `↓ ${download} Mbit/s · ↑ ${upload} Mbit/s · ping ${ping} ms${where}`,
+    TOAST_MAX,
+  );
+  return Object.fromEntries(LANGUAGES.map((lang) => [lang, text]));
 }
 
 /** The toast when a test is asked while one already runs. */
 export const ALREADY_RUNNING_TOAST = {
   en: 'A test is already running, its result will show in a moment.',
   fr: "Un test est déjà en cours, son résultat s'affichera dans un instant.",
+  de: 'Es läuft bereits ein Test, sein Ergebnis erscheint gleich.',
+  es: 'Ya hay una prueba en curso, su resultado aparecerá en un momento.',
 };

@@ -12,6 +12,7 @@ import {
   DEVICE_FEATURE_UNITS,
 } from '@gladysassistant/integration-sdk';
 import * as defaultEngine from '../speedtest.js';
+import { format } from '../i18n.js';
 import { createResultStore } from '../store.js';
 import {
   ALREADY_RUNNING_TOAST,
@@ -28,6 +29,29 @@ const DEVICE_TYPE = 'speedtest';
 const PLATFORM_DEVICE_ID = 'internet-connection';
 
 const logger = createLogger({ name: DEVICE_TYPE });
+
+// The messages of the Configuration buttons, in the four languages
+// (test/i18n.test.js). `{name}` placeholders are filled in by format().
+export const ACTION_TEXTS = {
+  testResult: {
+    en: '↓ {download} Mbit/s · ↑ {upload} Mbit/s · ping {ping} ms (server: {where})',
+    fr: '↓ {download} Mbit/s · ↑ {upload} Mbit/s · ping {ping} ms (serveur : {where})',
+    de: '↓ {download} Mbit/s · ↑ {upload} Mbit/s · Ping {ping} ms (Server: {where})',
+    es: '↓ {download} Mbit/s · ↑ {upload} Mbit/s · ping {ping} ms (servidor: {where})',
+  },
+  configuredServer: {
+    en: 'Configured server: {id}. Closest servers (ID — sponsor):\n{lines}',
+    fr: 'Serveur configuré : {id}. Serveurs les plus proches (ID — opérateur) :\n{lines}',
+    de: 'Konfigurierter Server: {id}. Nächstgelegene Server (ID — Betreiber):\n{lines}',
+    es: 'Servidor configurado: {id}. Servidores más cercanos (ID — operador):\n{lines}',
+  },
+  autoSelection: {
+    en: 'Auto-selection is active. Closest servers (ID — sponsor):\n{lines}',
+    fr: 'La sélection automatique est active. Serveurs les plus proches (ID — opérateur) :\n{lines}',
+    de: 'Die automatische Auswahl ist aktiv. Nächstgelegene Server (ID — Betreiber):\n{lines}',
+    es: 'La selección automática está activa. Servidores más cercanos (ID — operador):\n{lines}',
+  },
+};
 
 // Feature keys, kept in one place so discovery and publication always agree.
 const FEATURE = {
@@ -208,10 +232,7 @@ export const speedtest = {
       logger.info('Manual speed test requested');
       const { download, upload, ping, server } = await runAndPublish(gladys, config);
       const where = `${server.sponsor}, ${server.name}`;
-      return {
-        en: `↓ ${download} Mbit/s · ↑ ${upload} Mbit/s · ping ${ping} ms (server: ${where})`,
-        fr: `↓ ${download} Mbit/s · ↑ ${upload} Mbit/s · ping ${ping} ms (serveur : ${where})`,
-      };
+      return format(ACTION_TEXTS.testResult, { download, upload, ping, where });
     },
 
     async list_servers(gladys, { config }) {
@@ -220,16 +241,9 @@ export const speedtest = {
       const lines = servers
         .map((s) => `${s.id} — ${s.sponsor} (${s.name}, ${s.country}) · ${s.distance} km`)
         .join('\n');
-      const currentEn = config.server_id
-        ? `Configured server: ${config.server_id}.`
-        : 'Auto-selection is active.';
-      const currentFr = config.server_id
-        ? `Serveur configuré : ${config.server_id}.`
-        : 'La sélection automatique est active.';
-      return {
-        en: `${currentEn} Closest servers (ID — sponsor):\n${lines}`,
-        fr: `${currentFr} Serveurs les plus proches (ID — opérateur) :\n${lines}`,
-      };
+      return config.server_id
+        ? format(ACTION_TEXTS.configuredServer, { id: config.server_id, lines })
+        : format(ACTION_TEXTS.autoSelection, { lines });
     },
   },
 
