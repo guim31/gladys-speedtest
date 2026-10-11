@@ -21,9 +21,22 @@ toast du bouton, et `/data/last-result.json` relu après redémarrage.
 
 ## Widget `speed` : choix de conception
 
-- Les quatre tuiles et le graphique sont **liés aux fonctionnalités** (`device_feature`,
-  `device_features`) : ils vivent sans travail et le contenu ne coûte aucun appel réseau. Le
-  contenu ne porte que ce que le cœur ne sait pas : la date du dernier test et le serveur Ookla.
+- Depuis 1.3.0 (branche `feat/widget-polish`) : **deux tuiles** (Descendant, Montant) portant
+  le dernier résultat formaté par `formatSpeed` (Mb/s entiers, Gb/s à une décimale localisée
+  au-delà de 1 000), puis le graphique **en aires** (`chart_type: 'area'`, les deux réglages)
+  lié aux fonctionnalités (`device_features`), puis Ping, Gigue, « Dernier test » et « Serveur »
+  en lignes d'état. Une tuile liée (`device_feature`) affiche le rendu du cœur, `716.6 Mbit/s`
+  (`DeviceFeatureValueText`), que la tuile coupe sur un téléphone : d'où les tuiles en ligne.
+  Quatre tuiles laissaient la gigue seule en deuxième ligne (3 + 1 dès ~380 px de large).
+- Place d'une tuile dans le front 5.1.4 : `flex: 1 1 96px`, gap 8 px, padding 8 px, bordure
+  1 px (`border-box`), soit 78 px de texte au pire quand deux tuiles tiennent sur une ligne ;
+  valeur à 20 px semi-gras, unité à 12 px. Mesuré dans Chromium avec ce CSS : « 838 Mb/s »
+  prend 61 px en métrique Arial, 72 px en DejaVu Sans (police large) ; « 10,0 Gb/s » 79 px en
+  DejaVu, de trop. D'où 3 caractères pour la valeur, 4 pour l'unité (`SPEED_TILE_VALUE_MAX`,
+  `SPEED_TILE_UNIT_MAX`, tenus par les tests), et des Gb/s entiers dès 10 Gb/s. Le front ne
+  charge pas Source Sans Pro : le téléphone affiche sa police système.
+  Contenu d'une carte sur téléphone : largeur d'écran − 74 px (container 2 × 12, carte
+  2 × 1 + 2 × 24). Colonne la plus étroite du bureau : 14rem, soit 144 px de contenu.
 - Le dernier résultat est persisté dans `/data/last-result.json` (`src/store.js`, écriture
   atomique, meilleur effort) et relu au démarrage, pour renseigner le widget après un redémarrage.
   En local, `SPEEDTEST_DATA_DIR` pointe le store ailleurs ; les tests utilisent un dossier
@@ -40,9 +53,9 @@ toast du bouton, et `/data/last-result.json` relu après redémarrage.
 - L'action du widget **attend la fin du test** et renvoie le résultat en toast
   (`action_timeout_seconds` 120 : ~2 × (2 + 20) s au maximum, plus les pings et la sélection du
   serveur).
-- État vide (pas de résultat en mémoire, pas de test en cours) : un `text` body, mais les tuiles,
-  le graphique et le bouton restent, car Gladys garde l'historique même quand le conteneur l'a
-  oublié (premier démarrage après la mise à jour depuis 1.0.2).
+- État vide (pas de résultat en mémoire, pas de test en cours) : un `text` body, les tuiles
+  affichent « — », le graphique et le bouton restent, car Gladys garde l'historique même quand le
+  conteneur l'a oublié.
 - « Dernier test » : « à l'instant » / « il y a n min » sous une heure, sinon date courte
   localisée par `Intl.DateTimeFormat` (fuseau : `TZ` injecté par le superviseur) ; la date est
   celle du lancement du test, pas de sa fin. « Serveur » :

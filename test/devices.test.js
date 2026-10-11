@@ -258,19 +258,33 @@ test('a failed run keeps the previous result and still nudges the widget', async
 test('the speed widget content is valid and bound to the published features', () => {
   const gladys = createFakeGladys();
   const widget = speedtest.widgets[WIDGET.SPEED];
-  const content = widget.get(gladys, { settings: { chart: 'latency' }, language: 'fr' });
-  assert.deepEqual(validateWidgetContent(content), []);
-
   const device = speedtest.buildDevice(gladys, config);
   const published = new Set(device.features.map((f) => f.external_id));
-  const bound = content.components.flatMap((c) => [
-    ...(c.device_feature ? [c.device_feature] : []),
-    ...(c.device_features ?? []),
-  ]);
-  assert.equal(bound.length, 6, 'four tiles and a two-feature chart');
-  for (const id of bound) {
-    assert.ok(published.has(id), `${id} is a published feature`);
+  for (const chart of ['speeds', 'latency']) {
+    const content = widget.get(gladys, { settings: { chart }, language: 'fr' });
+    assert.deepEqual(validateWidgetContent(content), []);
+    const bound = content.components.flatMap((c) => [
+      ...(c.device_feature ? [c.device_feature] : []),
+      ...(c.device_features ?? []),
+    ]);
+    // The tiles carry the formatted last result: only the chart is bound.
+    assert.equal(bound.length, 2, `${chart}: a two-feature chart`);
+    for (const id of bound) {
+      assert.ok(published.has(id), `${id} is a published feature`);
+    }
   }
+});
+
+test('after a test the widget tiles show the result just published', async () => {
+  const gladys = createFakeGladys();
+  setEngineForTests({ runSpeedtest: async () => FAKE_RESULT });
+  await speedtest.actions.run_speedtest(gladys, { fields: {}, config });
+  const content = speedtest.widgets[WIDGET.SPEED].get(gladys, { settings: {}, language: 'en' });
+  const tiles = content.components.filter((c) => c.type === 'value');
+  assert.deepEqual(
+    tiles.map((t) => t.value),
+    ['843', '512'],
+  );
 });
 
 test('the widget button runs a test and toasts the result', async () => {
