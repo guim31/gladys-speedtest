@@ -72,7 +72,7 @@ export const TEXTS = {
   empty: {
     en: 'No result since the integration started: run a test, or wait for the next scheduled one.',
     fr: "Aucun résultat depuis le démarrage de l'intégration : lancez un test, ou attendez le prochain test planifié.",
-    de: 'Noch kein Ergebnis seit dem Start der Integration: Starten Sie einen Test oder warten Sie auf den nächsten geplanten.',
+    de: 'Noch kein Ergebnis seit dem Start der Integration: Starte einen Test oder warte auf den nächsten geplanten.',
     es: 'Ningún resultado desde el inicio de la integración: inicie una prueba o espere a la próxima programada.',
   },
 };

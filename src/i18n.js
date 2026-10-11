@@ -40,6 +40,6 @@ export function format(texts, vars = {}) {
 export const INIT_FAILED_STATUS = {
   en: 'Initialization failed, check the integration logs.',
   fr: "L'initialisation a échoué, consultez les logs de l'intégration.",
-  de: 'Initialisierung fehlgeschlagen, prüfen Sie die Logs der Integration.',
+  de: 'Initialisierung fehlgeschlagen, prüfe die Logs der Integration.',
   es: 'La inicialización falló, consulte los registros de la integración.',
 };

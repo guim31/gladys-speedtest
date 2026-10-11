@@ -5,7 +5,7 @@
   "description": {
     "en": "Measure your internet speed on a schedule using Speedtest.net servers.",
     "fr": "Mesurez périodiquement le débit de votre connexion via les serveurs Speedtest.net.",
-    "de": "Messen Sie regelmäßig Ihre Internetgeschwindigkeit über die Server von Speedtest.net.",
+    "de": "Miss regelmäßig deine Internetgeschwindigkeit über die Server von Speedtest.net.",
     "es": "Mida periódicamente la velocidad de su conexión con los servidores de Speedtest.net."
   },
   "version": "1.1.0",
@@ -27,7 +27,7 @@
       "description": {
         "en": "A test saturates your connection for about 25 seconds and can transfer several hundred MB per run: mind your data cap when choosing the interval. Results are stored as four sensors (download, upload, ping, jitter) you can chart and use in scenes.",
         "fr": "Un test sature la connexion pendant environ 25 secondes et peut transférer plusieurs centaines de Mo : tenez compte de votre quota de données en choisissant l'intervalle. Les résultats alimentent quatre capteurs (débits, ping, gigue) exploitables en graphiques et dans les scènes.",
-        "de": "Ein Test lastet Ihre Verbindung etwa 25 Sekunden lang voll aus und kann pro Durchlauf mehrere hundert MB übertragen: Denken Sie bei der Wahl des Intervalls an Ihr Datenvolumen. Die Ergebnisse landen in vier Sensoren (Download, Upload, Ping, Jitter), die Sie in Diagrammen und Szenen nutzen können.",
+        "de": "Ein Test lastet deine Verbindung etwa 25 Sekunden lang voll aus und kann pro Durchlauf mehrere hundert MB übertragen: Denk bei der Wahl des Intervalls an dein Datenvolumen. Die Ergebnisse landen in vier Sensoren (Download, Upload, Ping, Jitter), die du in Diagrammen und Szenen nutzen kannst.",
         "es": "Una prueba satura la conexión durante unos 25 segundos y puede transferir varios cientos de MB: tenga en cuenta su límite de datos al elegir el intervalo. Los resultados alimentan cuatro sensores (descarga, subida, ping, jitter) que puede usar en gráficos y escenas."
       },
       "links": [
@@ -92,7 +92,7 @@
       "description": {
         "en": "Leave empty to auto-select the closest healthy server. Use the \"List nearby servers\" button to find IDs.",
         "fr": "Laissez vide pour choisir automatiquement le meilleur serveur proche. Le bouton « Lister les serveurs proches » donne les ID.",
-        "de": "Leer lassen, um automatisch den nächstgelegenen funktionierenden Server zu wählen. Die Schaltfläche „Server in der Nähe auflisten“ zeigt die IDs.",
+        "de": "Lass das Feld leer, um automatisch den nächstgelegenen funktionierenden Server zu wählen. Die Schaltfläche „Server in der Nähe auflisten“ zeigt die IDs.",
         "es": "Deje en blanco para elegir automáticamente el mejor servidor cercano. El botón «Listar servidores cercanos» muestra los ID."
       },
       "required": false,

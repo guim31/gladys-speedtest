@@ -56,8 +56,10 @@ toast du bouton, et `/data/last-result.json` relu après redémarrage.
   l'interface du cœur ; Gladys retombe sur l'anglais pour une langue absente. `src/i18n.js` porte
   la liste (`LANGUAGES`), `format()` remplit les `{placeholders}` ; `test/i18n.test.js` échoue sur
   un objet du manifeste ou une table du code qui n'a pas exactement ces quatre langues, ou dont un
-  texte est vide ou trop long. Vocabulaire et registre (« Sie », « usted ») : ceux de
-  `front/src/config/i18n/{de,es}.json` du cœur.
+  texte est vide ou trop long. Vocabulaire : celui de `front/src/config/i18n/{de,es}.json`
+  du cœur. Registre : l'allemand **tutoie** (« du », impératif « starte »), comme la majorité des
+  écrans du cœur et toutes les intégrations de guim31 ; l'espagnol vouvoie (« usted »). Le test
+  refuse « Sie », « Ihr », « Ihre »… en majuscule dans un texte `de`.
 - Restent en anglais : les noms des fonctionnalités (`Download`, `Upload`, `Ping`, `Jitter`), figés
   à la création et sans réglage de langue, et les erreurs du moteur, que le SDK transmet en simple
   chaîne (`e.message`).

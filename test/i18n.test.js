@@ -110,6 +110,33 @@ test('every multilingual object of the manifest has exactly en, fr, de and es', 
   }
 });
 
+// --- German register ----------------------------------------------------------
+
+// German addresses the user with "du", like every integration of guim31. The
+// capitalized forms are the polite ones ("ihr Verlauf", "their history", stays
+// allowed); a sentence must not start with "Sie" or "Ihr" either.
+const POLITE_GERMAN = /\b(Sie|Ihr|Ihre|Ihren|Ihrem|Ihrer|Ihres)\b/;
+
+/** Every German text of the manifest and of the code tables. */
+function germanTexts() {
+  const tables = [
+    ...collect(manifest),
+    ...Object.entries(TEXTS).map(([key, texts]) => ({ path: `TEXTS.${key}`, texts })),
+    ...Object.entries(ACTION_TEXTS).map(([key, texts]) => ({ path: `ACTION_TEXTS.${key}`, texts })),
+    { path: 'ALREADY_RUNNING_TOAST', texts: ALREADY_RUNNING_TOAST },
+    { path: 'INIT_FAILED_STATUS', texts: INIT_FAILED_STATUS },
+  ];
+  return tables.map(({ path, texts }) => ({ path, text: texts.de }));
+}
+
+test('German texts use "du", never the polite "Sie" / "Ihr"', () => {
+  const texts = germanTexts();
+  assert.ok(texts.length >= 45); // 48 at the time of writing
+  for (const { path, text } of texts) {
+    assert.doesNotMatch(text, POLITE_GERMAN, `${path}.de addresses the user with "Sie"`);
+  }
+});
+
 // --- Code ----------------------------------------------------------------------
 
 // Bounds of the widget vocabulary (SDK TEXT_BOUNDS) for each text of TEXTS.
