@@ -8,8 +8,8 @@
     "de": "Miss regelmäßig deine Internetgeschwindigkeit über die Server von Speedtest.net.",
     "es": "Mida periódicamente la velocidad de su conexión con los servidores de Speedtest.net."
   },
-  "version": "1.2.0",
-  "docker_image": "ghcr.io/guim31/gladys-speedtest:1.2.0",
+  "version": "1.3.0",
+  "docker_image": "ghcr.io/guim31/gladys-speedtest:1.3.0",
   "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-speedtest/main/cover.png",
   "categories": ["network", "services"],
