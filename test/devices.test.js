@@ -109,6 +109,7 @@ test('the device never declares a poll_frequency (Gladys caps polling at 60 s)',
   const gladys = createFakeGladys();
   const device = speedtest.buildDevice(gladys, config);
   assert.equal(device.poll_frequency, undefined);
+  assert.equal(device.should_poll, false, 'Gladys never polls it: the timer is internal');
 });
 
 test('startPush schedules a test every poll_frequency seconds', async (t) => {

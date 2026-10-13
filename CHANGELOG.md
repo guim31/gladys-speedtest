@@ -7,6 +7,25 @@ Release workflow; their GitHub release carries the full notes.
 
 ### Changed
 
+- Quieter logs: an automatic test writes nothing at the default level any
+  more (its server and result move to debug), and a test that keeps failing
+  (connection down for hours) is logged once when it starts failing and once
+  when it works again, instead of every hour. Start the container with
+  `LOG_LEVEL=debug` to see every test.
+- Integration SDK 0.15 and up-to-date dependencies.
+
+### Fixed
+
+- Adding the Speedtest device in Gladys now fills its four sensors right away
+  with the last result, instead of leaving them empty until the next test.
+- The device now says explicitly that Gladys must not poll it
+  (`should_poll: false`): the tests keep running on the integration's own
+  schedule, as before.
+
+## [1.3.0] - 2026-10-11
+
+### Changed
+
 - **Internet speed** widget, reworked for phones and narrow columns:
   - two tiles side by side, download and upload, instead of four tiles that
     left jitter alone on a second line; ping and jitter move to the status

@@ -109,7 +109,7 @@ function refreshWidget(gladys) {
  */
 async function runAndPublish(gladys, config) {
   if (currentRun) {
-    logger.info('A speed test is already running, reusing it');
+    logger.debug('A speed test is already running, reusing it');
     return currentRun;
   }
   currentRun = (async () => {
@@ -151,9 +151,12 @@ export const speedtest = {
     return {
       name: 'Speedtest',
       external_id: ids.device,
-      // No poll_frequency: Gladys polling only accepts sub-minute intervals
-      // (60000 ms max), useless for an hourly test. The schedule lives in
-      // startPush() below, inside the container.
+      // Never polled by Gladys: its polling only accepts intervals up to a
+      // minute (60000 ms), useless for an hourly test, and needs
+      // should_poll: true AND a poll_frequency. The schedule lives in
+      // startPush() below, inside the container, so the device says so
+      // explicitly and carries no poll_frequency.
+      should_poll: false,
       features: [
         {
           name: 'Download',
@@ -208,22 +211,64 @@ export const speedtest = {
   },
 
   // Internal scheduler (the "push subscription" of this integration): one
-  // test every poll_frequency seconds. The first automatic run happens after
-  // a full interval — the manual button covers the "right now" need, and a
-  // config save must not silently burn hundreds of MB.
+  // test every poll_frequency seconds (the config field, in seconds; nothing
+  // to do with the device poll_frequency of Gladys). The first automatic run
+  // happens after a full interval — the manual button covers the "right now"
+  // need, and a config save must not silently burn hundreds of MB.
+  //
+  // Logs: a normal run writes nothing at info (LOG_LEVEL=debug shows it). A
+  // failure that repeats (connection down for hours) is logged once, then
+  // once when the tests work again.
   startPush(gladys, config) {
     if (!config.auto_test) {
       logger.info('Automatic tests disabled');
       return () => {};
     }
     logger.info(`Automatic test scheduled every ${config.poll_frequency} s`);
+    let failures = 0;
     const timer = setInterval(() => {
-      logger.info('Scheduled speed test starting...');
-      runAndPublish(gladys, config).catch((err) => {
-        logger.error('Scheduled speed test failed', err);
-      });
+      logger.debug('Scheduled speed test starting...');
+      runAndPublish(gladys, config).then(
+        () => {
+          if (failures > 0) {
+            logger.info(`Scheduled speed tests work again (after ${failures} failed)`);
+          }
+          failures = 0;
+        },
+        (err) => {
+          failures += 1;
+          if (failures === 1) {
+            logger.error(`Scheduled speed test failed: ${err.message}`);
+          } else {
+            logger.debug(
+              `Scheduled speed test failed again (${failures} in a row): ${err.message}`,
+            );
+          }
+        },
+      );
     }, config.poll_frequency * 1000);
     return () => clearInterval(timer);
+  },
+
+  // The device has just been added in Gladys: the states published before
+  // were dropped by the core (unknown features), so publish the last result
+  // again rather than leaving the sensors empty until the next test.
+  async onDeviceCreated(gladys) {
+    if (!lastResult) {
+      return;
+    }
+    const states = Object.values(FEATURE)
+      .filter((key) => Number.isFinite(lastResult[key]))
+      .map((key) => ({
+        device_feature_external_id: gladys
+          .externalIds(DEVICE_TYPE, PLATFORM_DEVICE_ID)
+          .feature(key),
+        state: lastResult[key],
+      }));
+    if (states.length > 0) {
+      await gladys.publishStates(states);
+    }
+    refreshWidget(gladys);
   },
 
   // Manifest actions (buttons in the Configuration screen).

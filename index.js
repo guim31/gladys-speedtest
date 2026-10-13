@@ -18,7 +18,11 @@
 import { GladysIntegration, logger } from '@gladysassistant/integration-sdk';
 import { normalizeConfig } from './src/config.js';
 import { INIT_FAILED_STATUS } from './src/i18n.js';
-import { DEVICE_BLUEPRINTS, buildDiscoveredDevices } from './src/devices/index.js';
+import {
+  DEVICE_BLUEPRINTS,
+  buildDiscoveredDevices,
+  findBlueprintByDevice,
+} from './src/devices/index.js';
 
 const gladys = new GladysIntegration();
 
@@ -50,6 +54,14 @@ function stopPushSubscriptions() {
 gladys.onScanRequest(async () => {
   logger.info('onScanRequest -> publishing discovered devices');
   await gladys.publishDiscoveredDevices(buildDiscoveredDevices(gladys, config));
+});
+
+// --- Device added by the user: publish what we already know ------------------
+// States published before the device exists in Gladys are dropped by the
+// core; the blueprint publishes the last result again.
+gladys.onDeviceCreated(async (device) => {
+  const blueprint = findBlueprintByDevice(gladys, device);
+  await blueprint?.onDeviceCreated?.(gladys, device);
 });
 
 // --- Command: every feature is read-only, there is nothing to set ------------

@@ -68,6 +68,10 @@ Good to know:
   lines fill better with 6–8) or **Measurement time**.
 - _Test fails_: the closest server may be down — pin a different **Server ID**,
   or clear the field to let auto-selection skip unhealthy servers.
+- _Logs_: at the default level the integration logs its start, your manual
+  tests and the first failure of the automatic test (then once when it works
+  again). To see every test, its server and its result, set the environment
+  variable `LOG_LEVEL=debug` on the container.
 
 This integration is an independent community project, not affiliated with or
 endorsed by Ookla. Speedtest® is a trademark of Ookla, LLC.

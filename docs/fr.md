@@ -75,6 +75,10 @@ Speedtest.net**). Il montre :
 - _Test en échec_ : le serveur le plus proche est peut-être en panne — imposez
   un autre **ID de serveur**, ou videz le champ pour laisser la sélection
   automatique écarter les serveurs défaillants.
+- _Journaux_ : au niveau par défaut, l'intégration note son démarrage, vos
+  tests manuels et le premier échec du test automatique (puis une ligne quand
+  il refonctionne). Pour voir chaque test, son serveur et son résultat,
+  donnez la variable d'environnement `LOG_LEVEL=debug` au conteneur.
 
 Cette intégration est un projet communautaire indépendant, sans affiliation ni
 approbation d'Ookla. Speedtest® est une marque d'Ookla, LLC.

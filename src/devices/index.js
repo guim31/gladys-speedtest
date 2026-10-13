@@ -5,7 +5,9 @@
 //   - key                        : short identifier (used in logs)
 //   - deviceExternalId(gladys)   : the device external_id (for dispatch)
 //   - buildDevice(gladys, config): the discovery payload sent to Gladys
-//   - onPoll(gladys, config)      (optional): periodic read
+//   - startPush(gladys, config)   (optional): internal scheduler, returns a
+//     cleanup function (Gladys never polls this device: should_poll false)
+//   - onDeviceCreated(gladys)     (optional): the device was just added
 //   - actions                     (optional): manifest action handlers, keyed
 //     by the action `key` declared in gladys-assistant-integration.json
 //
@@ -25,7 +27,7 @@ export function buildDiscoveredDevices(gladys, config) {
 
 /**
  * Find the blueprint that owns a given device, from its external_id
- * (used to route onPoll to the right device).
+ * (used to route onDeviceCreated to the right device).
  */
 export function findBlueprintByDevice(gladys, device) {
   return DEVICE_BLUEPRINTS.find((bp) => bp.deviceExternalId(gladys) === device.external_id);
