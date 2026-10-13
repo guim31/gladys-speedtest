@@ -179,7 +179,7 @@ export async function selectServer(config) {
     throw new Error('None of the closest Speedtest.net servers answered the latency probe');
   }
   healthy.sort((a, b) => a.ping - b.ping);
-  logger.info(
+  logger.debug(
     `Auto-selected server ${healthy[0].server.id} (${healthy[0].server.sponsor}, ` +
       `${healthy[0].server.name}) at ${Math.round(healthy[0].ping)} ms`,
   );
@@ -387,13 +387,13 @@ export async function measureUpload(host, { connections, duration }) {
  */
 export async function runSpeedtest(config) {
   const server = await selectServer(config);
-  logger.info(`Testing against ${server.host} (${server.sponsor}, ${server.name})`);
+  logger.debug(`Testing against ${server.host} (${server.sponsor}, ${server.name})`);
 
   const { ping, jitter } = computePingStats(await measurePing(server.host, PING_SAMPLES));
   const options = { connections: config.connections, duration: config.duration };
   const download = await measureDownload(server.host, options);
   const upload = await measureUpload(server.host, options);
 
-  logger.info(`Result: ↓${download} Mbit/s ↑${upload} Mbit/s ping ${ping} ms jitter ${jitter} ms`);
+  logger.debug(`Result: ↓${download} Mbit/s ↑${upload} Mbit/s ping ${ping} ms jitter ${jitter} ms`);
   return { ping, jitter, download, upload, server };
 }

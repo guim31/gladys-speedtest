@@ -14,7 +14,7 @@
 // `config_schema` of the manifest.
 export const DEFAULT_CONFIG = {
   server_id: '', // '' = pick the closest healthy server automatically
-  auto_test: true, // run a test on a schedule (Gladys polling)
+  auto_test: true, // run a test on a schedule (internal timer, never Gladys polling)
   poll_frequency: 3600, // seconds between automatic tests
   connections: 4, // parallel TCP connections per direction
   duration: 10, // measured seconds per direction (after a 2 s warmup)

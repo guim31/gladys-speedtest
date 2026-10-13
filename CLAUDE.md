@@ -2,22 +2,47 @@
 
 Mesurez périodiquement le débit de votre connexion via les serveurs Speedtest.net.
 
-Intégration externe pour [Gladys Assistant](https://gladysassistant.com), bâtie sur le template officiel `GladysAssistant/integration-template-js` (SDK `@gladysassistant/integration-sdk` ^0.14.0, `gladys_version` `>=5.1.0`). Mainteneur : Guilhem (`guim31`).
+Intégration externe pour [Gladys Assistant](https://gladysassistant.com), bâtie sur le template officiel `GladysAssistant/integration-template-js` (SDK `@gladysassistant/integration-sdk` ^0.15.0, `gladys_version` `>=5.1.0`). Mainteneur : Guilhem (`guim31`).
 
 Ce fichier rassemble ce qu'une session de code doit savoir et qui ne se lit pas dans le code : choix de conception, faits vérifiés en réel, pièges déjà payés. Le compléter quand un nouveau piège est découvert.
 
-## État au 05/10/2026
+## État au 13/10/2026
 
-Version 1.0.2 publiée, indexée dans le store. Un appareil virtuel et quatre capteurs historisés :
+Version 1.3.0 publiée, indexée dans le store. Un appareil virtuel et quatre capteurs historisés :
 débit descendant et montant (Mbit/s), ping et gigue (ms). Moteur en JavaScript pur, validé en réel
 sur une fibre gigabit (environ 920 et 850 Mbit/s), pour une mémoire résidente d'environ 178 Mo
 dans une sandbox Gladys de 256 Mo : surveiller la mémoire à chaque changement du moteur.
 
-Branche `feat/dashboard-widgets` (PR brouillon, non publiée) : SDK 0.14, `gladys_version`
-`>=5.1.0` et un widget de tableau de bord `speed` (« Débit Internet »), **jamais vu tourner dans
-une vraie Gladys** : seuls les tests, le lint et le validateur du store sont passés. À vérifier en
-réel : le rendu des tuiles liées avant que l'appareil soit ajouté, la fenêtre de l'historique, le
+Depuis 1.1.0 (`feat/dashboard-widgets`), `gladys_version` `>=5.1.0` et un widget de tableau de
+bord `speed` (« Débit Internet ») ; 1.2.0 ajoute l'allemand et l'espagnol, 1.3.0 refait le widget.
+Le widget n'a **jamais été vu tourner dans une vraie Gladys** par une session : seuls les tests, le
+lint et le validateur du store sont passés. À vérifier en réel : le rendu des tuiles liées avant que l'appareil soit ajouté, la fenêtre de l'historique, le
 toast du bouton, et `/data/last-result.json` relu après redémarrage.
+
+## Planification, polling et logs (maintenance SDK 0.15, 13/10/2026)
+
+- **Gladys ne sonde jamais l'appareil** : `should_poll: false` explicite, pas de
+  `poll_frequency` d'appareil, pas d'`onPoll`. Le test automatique tourne sur un
+  `setInterval` du conteneur (`startPush`, relancé à chaque connexion et à chaque
+  enregistrement de la config). Le champ de config `poll_frequency` est en **secondes**
+  (600 à 86 400) et n'a rien à voir avec celui d'un appareil Gladys (ms, liste fixe,
+  60 s au plus) : clé figée, ne pas la renommer. L'issue GladysAssistant/Gladys#3198 (appareils
+  créés sans `should_poll` jamais sondés) ne concerne donc pas cette intégration ;
+  `test/polling-logs.test.js` le tient avec le faux Gladys du SDK.
+- `onDeviceCreated` republie le dernier résultat (`/data/last-result.json`) et relance le
+  widget : les états publiés avant l'ajout de l'appareil sont jetés par le cœur.
+- **Logs** : au niveau info, seulement le cycle de vie (démarrage, planification, arrêt) et
+  une ligne par action de l'utilisateur (test manuel, liste des serveurs, bouton du widget,
+  config enregistrée). Le serveur choisi, le résultat de chaque test et le test partagé passent
+  en debug (`LOG_LEVEL=debug`). Un échec du test automatique est écrit une fois en erreur, les
+  suivants en debug, puis une ligne info au rétablissement. Testé dans
+  `test/polling-logs.test.js`.
+- Pas de `publishChangedStates` (déduplication du SDK 0.15) : chaque test horaire doit entrer
+  dans l'historique, même à valeur égale. Le faux Gladys maison (`test/helpers/fakeGladys.js`)
+  reste pour les tests existants ; les nouveaux tests prennent celui du SDK
+  (`@gladysassistant/integration-sdk/testing`), qui valide les charges comme le cœur.
+- La suite contient un test lourd (`formatSpeed never overflows a tile`, ~40 000 valeurs ×
+  4 langues) : quelques secondes sur une machine calme, plusieurs minutes sur un hôte chargé.
 
 ## Widget `speed` : choix de conception
 
@@ -169,7 +194,7 @@ Vérifiés dans le code du cœur ou payés sur une intégration publiée. Ils va
 - **Les clés de widgets, de déclencheurs et d'actions sont figées une fois publiées.**
 - Passer `gladys_version` à `>=5.1.0` coupe les mises à jour des cœurs plus anciens, qui
   refusent les champs inconnus du manifeste.
-- Le passage du SDK 0.13 à 0.14 n'a rien cassé ici : la suite existante passe telle quelle.
+- Les passages du SDK 0.13 à 0.14 puis à 0.15 n'ont rien cassé ici : la suite existante passe telle quelle.
 - Une ligne de `status` exige un `value` (nombre ou texte ≤ 40) : un état seul se met dans le
   `value`, avec un libellé générique (« État »), pas l'inverse.
 - `validateWidgetContent` ne vérifie pas que les `external_id` liés existent : le test croise le
