@@ -162,7 +162,7 @@
       "description": {
         "en": "Cloudflare engine only: keeps the public IP address it sees and shows it in the widget and the test result. Never written to the logs.",
         "fr": "Moteur Cloudflare seulement : garde l'adresse IP publique qu'il voit et l'affiche dans le widget et le résultat du test. Jamais écrite dans les logs.",
-        "de": "Nur Cloudflare-Engine: Speichert die öffentliche IP-Adresse, die sie sieht, und zeigt sie im Widget und im Testergebnis. Nie in den Logs.",
+        "de": "Nur für die Cloudflare-Engine: speichert die öffentliche IP-Adresse, die sie sieht, und zeigt sie im Widget und im Testergebnis. Nie in den Logs.",
         "es": "Solo motor Cloudflare: guarda la dirección IP pública que ve y la muestra en el widget y en el resultado. Nunca se escribe en los registros."
       },
       "required": false,

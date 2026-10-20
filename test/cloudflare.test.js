@@ -23,6 +23,7 @@ import {
   serverProcessingMs,
 } from '../src/cloudflare.js';
 import { normalizeConfig } from '../src/config.js';
+import { measureDownload } from '../src/speedtest.js';
 import {
   getLastResult,
   setEngineForTests,
@@ -110,6 +111,25 @@ test('the request paths stay within what Cloudflare accepts', () => {
   assert.equal(CLOUDFLARE_PATHS.upload(), '/__up');
 });
 
+test('a rate limit mid-measurement fails it instead of a falsely low speed', async () => {
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    if (calls === 1) {
+      return { ok: true, body: [new Uint8Array(1_000_000)] };
+    }
+    return { ok: false, status: 429, body: null };
+  };
+  const options = { connections: 1, duration: 5 };
+  await assert.rejects(measureDownload('speed.example', options, CLOUDFLARE_PATHS), /HTTP 429/);
+  calls = 0;
+  const mbps = await measureDownload('speed.example', options, {
+    ...CLOUDFLARE_PATHS,
+    failOnRateLimit: false,
+  });
+  assert.ok(mbps > 0, 'the Speedtest.net engine keeps its former behaviour');
+});
+
 test('the engine field defaults to Speedtest.net and the IP to hidden', () => {
   assert.equal(normalizeConfig().engine, 'speedtest');
   assert.equal(normalizeConfig({ engine: 'cloudflare' }).engine, 'cloudflare');
@@ -171,7 +191,11 @@ test('with the option, the IP shows in the widget and the result, never in the l
   for (const text of Object.values(message)) {
     assert.match(text, /Cloudflare, CDG.* · IP 198\.51\.100\.23$/);
   }
-  const content = speedtest.widgets[WIDGET.SPEED].get(gladys, { settings: {}, language: 'fr' });
+  const content = speedtest.widgets[WIDGET.SPEED].get(gladys, {
+    settings: {},
+    language: 'fr',
+    config,
+  });
   assert.deepEqual(validateWidgetContent(content), []);
   const rows = content.components.find((c) => c.type === 'status').items;
   assert.deepEqual(rows.find((row) => row.value === IP)?.label, {
@@ -196,6 +220,34 @@ test('a rate limit says so, and how to avoid it', async () => {
   );
   const other = new Error('Download request failed (HTTP 500)');
   assert.equal(rateLimitError(other), other);
+});
+
+test('turning the option off forgets the IP kept by an earlier test', async () => {
+  const dir = await freshStore();
+  setEngineForTests(engines([]));
+  const gladys = createFakeGladys();
+  const on = normalizeConfig({ engine: 'cloudflare', show_ip: true });
+  await speedtest.actions.run_speedtest(gladys, { config: on });
+  assert.equal(getLastResult().ip, IP);
+  const off = normalizeConfig({ engine: 'cloudflare', auto_test: false });
+  const content = speedtest.widgets[WIDGET.SPEED].get(gladys, { settings: {}, config: off });
+  assert.doesNotMatch(JSON.stringify(content), /198\.51\.100\.23/, 'hidden right away');
+  speedtest.startPush(gladys, off)();
+  assert.equal(getLastResult().ip, null);
+  const stored = await readFile(path.join(dir, LAST_RESULT_FILE), 'utf8');
+  assert.doesNotMatch(stored, /198\.51\.100\.23/);
+});
+
+test('list_servers names the Cloudflare engine even when Speedtest.net is down', async () => {
+  setEngineForTests({
+    listServers: async () => {
+      throw new Error('down');
+    },
+  });
+  const message = await speedtest.actions.list_servers(createFakeGladys(), {
+    config: normalizeConfig({ engine: 'cloudflare' }),
+  });
+  assert.match(message.en, /Cloudflare engine is selected/);
 });
 
 test(

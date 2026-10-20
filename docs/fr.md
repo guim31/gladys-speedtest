@@ -111,7 +111,7 @@ Speedtest.net & Cloudflare**). Il montre :
   parallèles** (les lignes rapides se remplissent mieux à 6–8) ou la **Durée de
   mesure**.
 - _Test en échec_ : le serveur le plus proche est peut-être en panne — imposez
-  un autre **ID de serveur**, ou videz le champ pour laisser la sélection
+  un autre **ID du serveur Speedtest.net**, ou videz le champ pour laisser la sélection
   automatique écarter les serveurs défaillants. Avec le moteur Cloudflare, une
   erreur _HTTP 429_ signifie que Cloudflare limite votre adresse pour un
   moment : espacez les tests, ou réduisez la durée de mesure.

@@ -193,6 +193,22 @@ export async function selectServer(config) {
 }
 
 /**
+ * With `paths.failOnRateLimit`, a worker stopped by HTTP 429 fails the whole
+ * measurement: the bytes counted before it would publish a falsely low speed.
+ */
+function throwIfRateLimited(results, paths) {
+  if (!paths.failOnRateLimit) {
+    return;
+  }
+  const limited = results.find(
+    (r) => r.status === 'rejected' && /HTTP 429/.test(r.reason?.message ?? ''),
+  );
+  if (limited) {
+    throw limited.reason;
+  }
+}
+
+/**
  * Shared measurement clock: warmup traffic is discarded, then bytes are
  * counted over exactly `duration` seconds and every worker is stopped.
  */
@@ -238,6 +254,7 @@ export async function measureDownload(host, { connections, duration }, paths = O
           signal: controller.signal,
         });
         if (!res.ok) {
+          await res.body?.cancel();
           throw new Error(`Download request failed (HTTP ${res.status})`);
         }
         for await (const chunk of res.body) {
@@ -258,6 +275,7 @@ export async function measureDownload(host, { connections, duration }, paths = O
 
   try {
     const results = await Promise.allSettled(Array.from({ length: connections }, () => worker()));
+    throwIfRateLimited(results, paths);
     if (window.counter.bytes === 0) {
       const failure = results.find((r) => r.status === 'rejected');
       throw failure?.reason ?? new Error('Download test received no data');
@@ -375,6 +393,7 @@ export async function measureUpload(host, { connections, duration }, paths = OOK
 
   try {
     const results = await Promise.allSettled(Array.from({ length: connections }, () => worker()));
+    throwIfRateLimited(results, paths);
     if (window.counter.bytes === 0) {
       const failure = results.find((r) => r.status === 'rejected');
       throw failure?.reason ?? new Error('Upload test sent no data');

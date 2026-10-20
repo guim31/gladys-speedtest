@@ -99,7 +99,8 @@ Good to know:
 
 - _Results lower than the official app_: increase **Parallel connections** (fast
   lines fill better with 6–8) or **Measurement time**.
-- _Test fails_: the closest server may be down — pin a different **Server ID**,
+- _Test fails_: the closest server may be down — pin a different **Speedtest.net server
+  ID**,
   or clear the field to let auto-selection skip unhealthy servers. With the
   Cloudflare engine, an _HTTP 429_ error means Cloudflare is limiting your
   address for a while: lengthen the interval, or lower the measurement time.

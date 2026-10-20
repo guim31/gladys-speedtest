@@ -109,7 +109,7 @@ Conviene saber:
   paralelas** (las líneas rápidas se llenan mejor con 6–8) o la **Duración de
   medición**.
 - _La prueba falla_: puede que el servidor más cercano esté caído — fije otro
-  **ID del servidor**, o vacíe el campo para que la selección automática
+  **ID del servidor Speedtest.net**, o vacíe el campo para que la selección automática
   descarte los servidores defectuosos. Con el motor Cloudflare, un error
   _HTTP 429_ significa que Cloudflare limita su dirección durante un tiempo:
   aumente el intervalo o reduzca la duración de medición.

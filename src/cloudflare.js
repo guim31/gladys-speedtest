@@ -33,10 +33,15 @@ export const CLOUDFLARE_HOST = 'speed.cloudflare.com';
 const DOWNLOAD_REQUEST_BYTES = 25_000_000;
 // Latency samples: empty requests, a few hundred bytes each.
 const PING_SAMPLES = 20;
+// Give up the latency samples after this many failures in a row (5 s each),
+// well within the 90 s of the manual test action.
+const MAX_PING_FAILURES = 3;
 
 export const CLOUDFLARE_PATHS = {
   download: () => `/__down?bytes=${DOWNLOAD_REQUEST_BYTES}`,
   upload: () => '/__up',
+  // A rate limit mid-test must fail it, not publish a falsely low speed.
+  failOnRateLimit: true,
 };
 
 // One keep-alive connection for the latency samples, so that no sample pays
@@ -124,21 +129,30 @@ function pingOnce() {
 }
 
 /**
- * Sequential latency samples. Failed samples are dropped; throws only if
- * every sample failed. The first sample opens the connection: it is
+ * Sequential latency samples. Failed samples are dropped; throws after
+ * MAX_PING_FAILURES failures in a row, or if no sample succeeded. The first
+ * successful sample opened the connection (TCP and TLS handshakes): it is
  * discarded.
  */
 async function measurePing(count) {
   const samples = [];
+  let warmedUp = false;
+  let failures = 0;
   let lastError;
-  for (let i = 0; i <= count; i += 1) {
+  while (samples.length < count) {
     try {
       const sample = await pingOnce();
-      if (i > 0) {
+      failures = 0;
+      if (warmedUp) {
         samples.push(sample);
       }
+      warmedUp = true;
     } catch (err) {
       lastError = err;
+      failures += 1;
+      if (failures >= MAX_PING_FAILURES) {
+        break;
+      }
     }
   }
   if (samples.length === 0) {
@@ -171,19 +185,21 @@ export function rateLimitError(err) {
  * @returns {Promise<{ ping, jitter, download, upload, server, ip }>}
  */
 export async function runCloudflareTest(config) {
+  try {
+    return await runTest(config);
+  } catch (err) {
+    throw rateLimitError(err);
+  }
+}
+
+async function runTest(config) {
   const trace = await fetchTrace();
   logger.debug(`Testing against Cloudflare (${trace.colo ?? 'unknown point of presence'})`);
 
   const { ping, jitter } = computePingStats(await measurePing(PING_SAMPLES));
   const options = { connections: config.connections, duration: config.duration };
-  let download;
-  let upload;
-  try {
-    download = await measureDownload(CLOUDFLARE_HOST, options, CLOUDFLARE_PATHS);
-    upload = await measureUpload(CLOUDFLARE_HOST, options, CLOUDFLARE_PATHS);
-  } catch (err) {
-    throw rateLimitError(err);
-  }
+  const download = await measureDownload(CLOUDFLARE_HOST, options, CLOUDFLARE_PATHS);
+  const upload = await measureUpload(CLOUDFLARE_HOST, options, CLOUDFLARE_PATHS);
 
   // No IP address here, ever (see the header of this file).
   logger.debug(`Result: ↓${download} Mbit/s ↑${upload} Mbit/s ping ${ping} ms jitter ${jitter} ms`);

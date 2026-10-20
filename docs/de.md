@@ -111,7 +111,7 @@ Gut zu wissen:
   Verbindungen** (schnelle Leitungen werden mit 6–8 besser ausgelastet) oder
   die **Messdauer**.
 - _Test schlägt fehl_: Der nächstgelegene Server ist vielleicht ausgefallen —
-  lege eine andere **Server-ID** fest oder leere das Feld, damit die
+  lege eine andere **Speedtest.net-Server-ID** fest oder leere das Feld, damit die
   automatische Auswahl defekte Server überspringt. Mit der Cloudflare-Engine
   bedeutet ein Fehler _HTTP 429_, dass Cloudflare deine Adresse eine Zeit lang
   begrenzt: Vergrößere das Intervall oder verkürze die Messdauer.
