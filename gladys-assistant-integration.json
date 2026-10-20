@@ -8,8 +8,8 @@
     "de": "Miss regelmäßig deine Internetgeschwindigkeit mit Speedtest.net oder Cloudflare.",
     "es": "Mida periódicamente la velocidad de su conexión con Speedtest.net o Cloudflare."
   },
-  "version": "1.4.0",
-  "docker_image": "ghcr.io/guim31/gladys-speedtest:1.4.0",
+  "version": "1.5.0",
+  "docker_image": "ghcr.io/guim31/gladys-speedtest:1.5.0",
   "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-speedtest/main/cover.png",
   "categories": ["network", "services"],
@@ -336,7 +336,12 @@
         {
           "key": "display",
           "type": "select",
-          "label": { "en": "Display", "fr": "Affichage", "de": "Anzeige", "es": "Visualización" },
+          "label": {
+            "en": "Display",
+            "fr": "Affichage",
+            "de": "Anzeige",
+            "es": "Visualización"
+          },
           "description": {
             "en": "Full, three tiles and the chart, or three tiles only.",
             "fr": "Complet, trois cases et le graphique, ou trois cases seules.",
@@ -348,7 +353,12 @@
           "options": [
             {
               "value": "full",
-              "label": { "en": "Full", "fr": "Complet", "de": "Vollständig", "es": "Completo" }
+              "label": {
+                "en": "Full",
+                "fr": "Complet",
+                "de": "Vollständig",
+                "es": "Completo"
+              }
             },
             {
               "value": "standard",
