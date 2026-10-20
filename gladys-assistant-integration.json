@@ -8,8 +8,8 @@
     "de": "Miss regelmäßig deine Internetgeschwindigkeit mit Speedtest.net oder Cloudflare.",
     "es": "Mida periódicamente la velocidad de su conexión con Speedtest.net o Cloudflare."
   },
-  "version": "1.5.0",
-  "docker_image": "ghcr.io/guim31/gladys-speedtest:1.5.0",
+  "version": "1.6.0",
+  "docker_image": "ghcr.io/guim31/gladys-speedtest:1.6.0",
   "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-speedtest/main/cover.png",
   "categories": ["network", "services"],
@@ -409,11 +409,21 @@
             },
             {
               "value": "always",
-              "label": { "en": "Always", "fr": "Toujours", "de": "Immer", "es": "Siempre" }
+              "label": {
+                "en": "Always",
+                "fr": "Toujours",
+                "de": "Immer",
+                "es": "Siempre"
+              }
             },
             {
               "value": "never",
-              "label": { "en": "Never", "fr": "Jamais", "de": "Nie", "es": "Nunca" }
+              "label": {
+                "en": "Never",
+                "fr": "Jamais",
+                "de": "Nie",
+                "es": "Nunca"
+              }
             }
           ]
         }
@@ -441,7 +451,12 @@
         {
           "key": "error",
           "type": "string",
-          "label": { "en": "Error", "fr": "Erreur", "de": "Fehler", "es": "Error" }
+          "label": {
+            "en": "Error",
+            "fr": "Erreur",
+            "de": "Fehler",
+            "es": "Error"
+          }
         },
         {
           "key": "failures",
@@ -507,7 +522,12 @@
         {
           "key": "ping",
           "type": "number",
-          "label": { "en": "Ping (ms)", "fr": "Ping (ms)", "de": "Ping (ms)", "es": "Ping (ms)" }
+          "label": {
+            "en": "Ping (ms)",
+            "fr": "Ping (ms)",
+            "de": "Ping (ms)",
+            "es": "Ping (ms)"
+          }
         },
         {
           "key": "jitter",
@@ -522,7 +542,12 @@
         {
           "key": "error",
           "type": "string",
-          "label": { "en": "Error", "fr": "Erreur", "de": "Fehler", "es": "Error" }
+          "label": {
+            "en": "Error",
+            "fr": "Erreur",
+            "de": "Fehler",
+            "es": "Error"
+          }
         }
       ]
     }
