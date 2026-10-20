@@ -38,6 +38,11 @@ export const DEFAULT_CHART = 'speeds';
 export const INTERVALS = ['last-day', 'last-week', 'last-month'];
 export const DEFAULT_INTERVAL = 'last-week';
 
+// How much the widget shows (forum t/11382): everything (the layout until
+// 1.4.0), three tiles and the chart, or the three tiles alone. Keys frozen.
+export const DISPLAYS = ['full', 'standard', 'compact'];
+export const DEFAULT_DISPLAY = 'full';
+
 /** Freshness of the content: short while a test runs, long otherwise. */
 export const TTL_RUNNING_SECONDS = 10;
 export const TTL_IDLE_SECONDS = 300;
@@ -128,12 +133,13 @@ export function fit(text, max) {
  * The widget settings as the builders use them: unknown or missing values
  * fall back to the defaults declared in the manifest.
  * @param {Record<string, unknown>} [settings] the instance settings
- * @returns {{ chart: string, interval: string }}
+ * @returns {{ chart: string, interval: string, display: string }}
  */
 export function normalizeSettings(settings = {}) {
   const chart = CHARTS.includes(settings?.chart) ? settings.chart : DEFAULT_CHART;
   const interval = INTERVALS.includes(settings?.interval) ? settings.interval : DEFAULT_INTERVAL;
-  return { chart, interval };
+  const display = DISPLAYS.includes(settings?.display) ? settings.display : DEFAULT_DISPLAY;
+  return { chart, interval, display };
 }
 
 /**
@@ -238,6 +244,18 @@ function speedTile(label, icon, mbps, language) {
   return { type: 'value', label, icon, value, ...(unit ? { unit } : {}) };
 }
 
+/** The ping tile of the shorter displays: whole milliseconds, "—" when unknown. */
+function pingTile(ms) {
+  const known = typeof ms === 'number' && Number.isFinite(ms) && ms >= 0;
+  return {
+    type: 'value',
+    label: TEXTS.ping,
+    icon: 'clock',
+    value: known ? String(Math.min(Math.round(ms), 999)) : NO_VALUE,
+    ...(known ? { unit: 'ms' } : {}),
+  };
+}
+
 /**
  * The content of the speed widget.
  * @param {object} view
@@ -260,11 +278,9 @@ export function buildSpeedContent({
   now,
   timeZone,
 }) {
-  const { chart, interval } = normalizeSettings(settings);
+  const { chart, interval, display } = normalizeSettings(settings);
   const lang = widgetLanguage(language);
-  const components = [
-    speedTile(TEXTS.download, 'download', lastResult?.download, lang),
-    speedTile(TEXTS.upload, 'upload', lastResult?.upload, lang),
+  const chartComponent =
     chart === 'latency'
       ? {
           type: 'chart',
@@ -281,8 +297,24 @@ export function buildSpeedContent({
           chart_type: CHART_TYPE,
           title: TEXTS.speedsChart,
           unit: 'Mb/s',
-        },
+        };
+  const tiles = [
+    speedTile(TEXTS.download, 'download', lastResult?.download, lang),
+    speedTile(TEXTS.upload, 'upload', lastResult?.upload, lang),
   ];
+  if (display !== 'full') {
+    // Three tiles (download, upload, ping), the chart in "standard"; no
+    // status rows nor button: the configuration's action still runs a test.
+    const components = [...tiles, pingTile(lastResult?.ping)];
+    if (display === 'standard') {
+      components.push(chartComponent);
+    }
+    return {
+      ttl_seconds: running ? TTL_RUNNING_SECONDS : TTL_IDLE_SECONDS,
+      components,
+    };
+  }
+  const components = [...tiles, chartComponent];
 
   const items = [];
   if (lastResult) {

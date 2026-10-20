@@ -92,6 +92,8 @@ Cloudflare**). Es zeigt:
   Benachrichtigung, wenn der Test endet (etwa eine halbe Minute). Tippst du
   darauf, während schon ein Test läuft, startet kein zweiter.
 
+**Anzeige** verkürzt das Widget: _Vollständig_ (Standard) ist die Darstellung oben; _Raten, Ping und Diagramm_ behält drei Kacheln (Download, Upload, Ping) und das Diagramm; _Raten und Ping_ nur die drei Kacheln. Diese beiden haben weder Statuszeilen noch Schaltfläche: Einen Test startest du weiterhin in der Konfiguration der Integration.
+
 Gut zu wissen:
 
 - Das Diagramm liest die Sensoren des Geräts: Füge das Gerät zu Gladys hinzu

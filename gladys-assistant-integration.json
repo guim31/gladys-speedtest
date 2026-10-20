@@ -332,6 +332,43 @@
               }
             }
           ]
+        },
+        {
+          "key": "display",
+          "type": "select",
+          "label": { "en": "Display", "fr": "Affichage", "de": "Anzeige", "es": "Visualización" },
+          "description": {
+            "en": "Full, three tiles and the chart, or three tiles only.",
+            "fr": "Complet, trois cases et le graphique, ou trois cases seules.",
+            "de": "Vollständig, drei Kacheln mit Diagramm oder nur drei Kacheln.",
+            "es": "Completo, tres casillas y el gráfico, o solo tres casillas."
+          },
+          "required": false,
+          "default": "full",
+          "options": [
+            {
+              "value": "full",
+              "label": { "en": "Full", "fr": "Complet", "de": "Vollständig", "es": "Completo" }
+            },
+            {
+              "value": "standard",
+              "label": {
+                "en": "Speeds, ping and chart",
+                "fr": "Débits, ping et graphique",
+                "de": "Raten, Ping und Diagramm",
+                "es": "Velocidades, ping y gráfico"
+              }
+            },
+            {
+              "value": "compact",
+              "label": {
+                "en": "Speeds and ping",
+                "fr": "Débits et ping",
+                "de": "Raten und Ping",
+                "es": "Velocidades y ping"
+              }
+            }
+          ]
         }
       ],
       "action_timeout_seconds": 120
