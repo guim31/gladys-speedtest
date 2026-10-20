@@ -85,6 +85,8 @@ shows:
 
 **Display** shortens the widget: _Full_ (default) is the layout above; _Speeds, ping and chart_ keeps three tiles (download, upload, ping) and the chart; _Speeds and ping_ keeps the three tiles alone. The two shorter ones have no status rows nor button: a test still runs from the integration's configuration.
 
+**"Run a test" button**: _By the display_ (default: in the full layout only), _Always_ or _Never_, for each widget.
+
 Good to know:
 
 - The chart reads the device sensors: add the device to Gladys
@@ -96,6 +98,13 @@ Good to know:
   yet.
 - Chart intervals and the long-term history follow your Gladys settings for
   device history (data retention).
+
+## Scenes
+
+- Trigger **Automatic speed test failed**: an automatic test could not run, often because Internet is down. Variables: the error and the number of failures in a row. Tests run every hour by default (10 minutes at the least): a short outage between two tests is not seen.
+- Action **Run a speed test**: waits for the result (about 30 s) and gives the next actions _Test succeeded_, the download, upload, ping and jitter, or the error. A failed test does not fail the action: _Test succeeded_ says it, in a message for instance. The test also updates the device sensors, which a condition can check. A test a scene asked for never fires the trigger above.
+
+Example: when the ping goes above 300 ms (trigger on the device value), send a notification, wait 2 minutes, run a speed test, and continue only if the ping is still high.
 
 ## Troubleshooting
 

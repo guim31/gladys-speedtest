@@ -71,15 +71,20 @@ test('normalizeSettings applies the manifest defaults to unknown values', () => 
     chart: DEFAULT_CHART,
     interval: DEFAULT_INTERVAL,
     display: 'full',
-  });
-  assert.deepEqual(normalizeSettings({ chart: 'nope', interval: 'last-year', display: 'x' }), {
-    chart: DEFAULT_CHART,
-    interval: DEFAULT_INTERVAL,
-    display: 'full',
+    button: 'auto',
   });
   assert.deepEqual(
-    normalizeSettings({ chart: 'latency', interval: 'last-month', display: 'compact' }),
-    { chart: 'latency', interval: 'last-month', display: 'compact' },
+    normalizeSettings({ chart: 'nope', interval: 'last-year', display: 'x', button: 'y' }),
+    { chart: DEFAULT_CHART, interval: DEFAULT_INTERVAL, display: 'full', button: 'auto' },
+  );
+  assert.deepEqual(
+    normalizeSettings({
+      chart: 'latency',
+      interval: 'last-month',
+      display: 'compact',
+      button: 'always',
+    }),
+    { chart: 'latency', interval: 'last-month', display: 'compact', button: 'always' },
   );
   assert.ok(CHARTS.includes(DEFAULT_CHART));
   assert.ok(INTERVALS.includes(DEFAULT_INTERVAL));
@@ -423,4 +428,22 @@ test('display: three tiles and the chart ("standard"), three tiles alone ("compa
   assert.equal(empty.components[2].value, '—');
   // The default stays the full layout.
   assert.ok(view(undefined).components.some((c) => c.type === 'button'));
+});
+
+test('button: by the display (default), always or never', () => {
+  const hasButton = (settings) =>
+    buildSpeedContent({
+      features: FEATURES,
+      lastResult: LAST_RESULT,
+      running: false,
+      settings,
+      language: 'fr',
+      now: NOW,
+      timeZone: 'UTC',
+    }).components.some((c) => c.type === 'button');
+  assert.equal(hasButton({}), true, 'full: the button, as before');
+  assert.equal(hasButton({ display: 'compact' }), false, 'short: none by default');
+  assert.equal(hasButton({ display: 'compact', button: 'always' }), true);
+  assert.equal(hasButton({ display: 'standard', button: 'always' }), true);
+  assert.equal(hasButton({ button: 'never' }), false);
 });

@@ -94,6 +94,8 @@ Cloudflare**). Es zeigt:
 
 **Anzeige** verkürzt das Widget: _Vollständig_ (Standard) ist die Darstellung oben; _Raten, Ping und Diagramm_ behält drei Kacheln (Download, Upload, Ping) und das Diagramm; _Raten und Ping_ nur die drei Kacheln. Diese beiden haben weder Statuszeilen noch Schaltfläche: Einen Test startest du weiterhin in der Konfiguration der Integration.
 
+**Schaltfläche „Test starten“**: _Je nach Anzeige_ (Standard: nur in der vollständigen Ansicht), _Immer_ oder _Nie_, für jedes Widget.
+
 Gut zu wissen:
 
 - Das Diagramm liest die Sensoren des Geräts: Füge das Gerät zu Gladys hinzu
@@ -106,6 +108,13 @@ Gut zu wissen:
   noch kein Ergebnis bekannt ist.
 - Die Zeiträume des Diagramms und der lange Verlauf folgen deinen
   Gladys-Einstellungen zur Aufbewahrung der Gerätedaten.
+
+## Szenen
+
+- Auslöser **Automatischer Geschwindigkeitstest fehlgeschlagen**: Ein automatischer Test ist gescheitert, oft weil das Internet ausgefallen ist. Variablen: der Fehler und die Zahl der Fehlschläge in Folge. Die Tests laufen standardmäßig stündlich (mindestens alle 10 Minuten): Ein kurzer Ausfall zwischen zwei Tests fällt nicht auf.
+- Aktion **Geschwindigkeitstest starten**: wartet auf das Ergebnis (etwa 30 s) und gibt den nächsten Aktionen _Test erfolgreich_, Download, Upload, Ping und Jitter oder den Fehler. Ein fehlgeschlagener Test lässt die Aktion nicht scheitern: _Test erfolgreich_ sagt es, etwa in einer Nachricht. Der Test aktualisiert auch die Sensoren des Geräts, die eine Bedingung prüfen kann. Ein von einer Szene gestarteter Test löst den Auslöser oben nie aus.
+
+Beispiel: Wenn der Ping über 300 ms steigt (Auslöser auf den Gerätewert), eine Benachrichtigung senden, 2 Minuten warten, einen Geschwindigkeitstest starten und nur weitermachen, wenn der Ping noch hoch ist.
 
 ## Fehlerbehebung
 

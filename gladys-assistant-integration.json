@@ -379,9 +379,152 @@
               }
             }
           ]
+        },
+        {
+          "key": "button",
+          "type": "select",
+          "label": {
+            "en": "\"Run a test\" button",
+            "fr": "Bouton « Lancer un test »",
+            "de": "Schaltfläche „Test starten“",
+            "es": "Botón «Iniciar prueba»"
+          },
+          "description": {
+            "en": "By the display (full only), always or never.",
+            "fr": "Selon l'affichage (complet seulement), toujours ou jamais.",
+            "de": "Je nach Anzeige (nur vollständig), immer oder nie.",
+            "es": "Según la visualización (solo completa), siempre o nunca."
+          },
+          "required": false,
+          "default": "auto",
+          "options": [
+            {
+              "value": "auto",
+              "label": {
+                "en": "By the display",
+                "fr": "Selon l'affichage",
+                "de": "Je nach Anzeige",
+                "es": "Según la visualización"
+              }
+            },
+            {
+              "value": "always",
+              "label": { "en": "Always", "fr": "Toujours", "de": "Immer", "es": "Siempre" }
+            },
+            {
+              "value": "never",
+              "label": { "en": "Never", "fr": "Jamais", "de": "Nie", "es": "Nunca" }
+            }
+          ]
         }
       ],
       "action_timeout_seconds": 120
+    }
+  ],
+  "scene_triggers": [
+    {
+      "key": "test_failed",
+      "label": {
+        "en": "Automatic speed test failed",
+        "fr": "Test de débit automatique en échec",
+        "de": "Automatischer Geschwindigkeitstest fehlgeschlagen",
+        "es": "Prueba automática de velocidad fallida"
+      },
+      "description": {
+        "en": "An automatic test could not run: often an Internet outage.",
+        "fr": "Un test automatique n'a pas pu aboutir : souvent une coupure d'Internet.",
+        "de": "Ein automatischer Test ist gescheitert: oft ein Internetausfall.",
+        "es": "Una prueba automática no pudo realizarse: a menudo un corte de Internet."
+      },
+      "fields": [],
+      "variables": [
+        {
+          "key": "error",
+          "type": "string",
+          "label": { "en": "Error", "fr": "Erreur", "de": "Fehler", "es": "Error" }
+        },
+        {
+          "key": "failures",
+          "type": "number",
+          "label": {
+            "en": "Failures in a row",
+            "fr": "Échecs consécutifs",
+            "de": "Fehlschläge in Folge",
+            "es": "Fallos seguidos"
+          }
+        }
+      ]
+    }
+  ],
+  "scene_actions": [
+    {
+      "key": "run_test",
+      "label": {
+        "en": "Run a speed test",
+        "fr": "Lancer un test de débit",
+        "de": "Geschwindigkeitstest starten",
+        "es": "Iniciar una prueba de velocidad"
+      },
+      "description": {
+        "en": "Waits for the result (about 30 s) and gives it to the next actions.",
+        "fr": "Attend le résultat (une trentaine de secondes) et le donne aux actions suivantes.",
+        "de": "Wartet auf das Ergebnis (etwa 30 s) und gibt es an die nächsten Aktionen weiter.",
+        "es": "Espera el resultado (unos 30 s) y lo pasa a las acciones siguientes."
+      },
+      "timeout_seconds": 120,
+      "fields": [],
+      "outputs": [
+        {
+          "key": "success",
+          "type": "boolean",
+          "label": {
+            "en": "Test succeeded",
+            "fr": "Test réussi",
+            "de": "Test erfolgreich",
+            "es": "Prueba correcta"
+          }
+        },
+        {
+          "key": "download",
+          "type": "number",
+          "label": {
+            "en": "Download (Mbit/s)",
+            "fr": "Débit descendant (Mbit/s)",
+            "de": "Download (Mbit/s)",
+            "es": "Descarga (Mbit/s)"
+          }
+        },
+        {
+          "key": "upload",
+          "type": "number",
+          "label": {
+            "en": "Upload (Mbit/s)",
+            "fr": "Débit montant (Mbit/s)",
+            "de": "Upload (Mbit/s)",
+            "es": "Subida (Mbit/s)"
+          }
+        },
+        {
+          "key": "ping",
+          "type": "number",
+          "label": { "en": "Ping (ms)", "fr": "Ping (ms)", "de": "Ping (ms)", "es": "Ping (ms)" }
+        },
+        {
+          "key": "jitter",
+          "type": "number",
+          "label": {
+            "en": "Jitter (ms)",
+            "fr": "Gigue (ms)",
+            "de": "Jitter (ms)",
+            "es": "Jitter (ms)"
+          }
+        },
+        {
+          "key": "error",
+          "type": "string",
+          "label": { "en": "Error", "fr": "Erreur", "de": "Fehler", "es": "Error" }
+        }
+      ]
     }
   ]
 }

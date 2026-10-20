@@ -80,6 +80,15 @@ for (const blueprint of DEVICE_BLUEPRINTS) {
   }
 }
 
+// --- Scene actions (Gladys 5.1+) ----------------------------------------------
+// Each action declared in the `scene_actions` field of the manifest is
+// registered per key; its outputs feed the following actions of the scene.
+for (const blueprint of DEVICE_BLUEPRINTS) {
+  for (const [actionKey, handler] of Object.entries(blueprint.sceneActions ?? {})) {
+    gladys.onSceneAction(actionKey, (fields) => handler(gladys, { fields, config }));
+  }
+}
+
 // --- Dashboard widgets (Gladys 5.1+) -----------------------------------------
 // Each widget declared in the `widgets` field of the manifest is registered
 // per key: the content is pulled by the core (15 s ack) and the buttons come

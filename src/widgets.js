@@ -43,6 +43,11 @@ export const DEFAULT_INTERVAL = 'last-week';
 export const DISPLAYS = ['full', 'standard', 'compact'];
 export const DEFAULT_DISPLAY = 'full';
 
+// The "Run a test" button: by the display (full only, the default), always or
+// never (forum t/11382/5). Keys frozen.
+export const BUTTONS = ['auto', 'always', 'never'];
+export const DEFAULT_BUTTON = 'auto';
+
 /** Freshness of the content: short while a test runs, long otherwise. */
 export const TTL_RUNNING_SECONDS = 10;
 export const TTL_IDLE_SECONDS = 300;
@@ -133,13 +138,14 @@ export function fit(text, max) {
  * The widget settings as the builders use them: unknown or missing values
  * fall back to the defaults declared in the manifest.
  * @param {Record<string, unknown>} [settings] the instance settings
- * @returns {{ chart: string, interval: string, display: string }}
+ * @returns {{ chart: string, interval: string, display: string, button: string }}
  */
 export function normalizeSettings(settings = {}) {
   const chart = CHARTS.includes(settings?.chart) ? settings.chart : DEFAULT_CHART;
   const interval = INTERVALS.includes(settings?.interval) ? settings.interval : DEFAULT_INTERVAL;
   const display = DISPLAYS.includes(settings?.display) ? settings.display : DEFAULT_DISPLAY;
-  return { chart, interval, display };
+  const button = BUTTONS.includes(settings?.button) ? settings.button : DEFAULT_BUTTON;
+  return { chart, interval, display, button };
 }
 
 /**
@@ -278,7 +284,14 @@ export function buildSpeedContent({
   now,
   timeZone,
 }) {
-  const { chart, interval, display } = normalizeSettings(settings);
+  const { chart, interval, display, button } = normalizeSettings(settings);
+  const showButton = button === 'always' || (button === 'auto' && display === 'full');
+  const runButton = {
+    type: 'button',
+    label: TEXTS.runTest,
+    icon: running ? 'loader' : 'play',
+    action: { key: WIDGET_ACTION.RUN_TEST },
+  };
   const lang = widgetLanguage(language);
   const chartComponent =
     chart === 'latency'
@@ -304,10 +317,13 @@ export function buildSpeedContent({
   ];
   if (display !== 'full') {
     // Three tiles (download, upload, ping), the chart in "standard"; no
-    // status rows nor button: the configuration's action still runs a test.
+    // status rows; the button only when asked ("always").
     const components = [...tiles, pingTile(lastResult?.ping)];
     if (display === 'standard') {
       components.push(chartComponent);
+    }
+    if (showButton) {
+      components.push(runButton);
     }
     return {
       ttl_seconds: running ? TTL_RUNNING_SECONDS : TTL_IDLE_SECONDS,
@@ -358,12 +374,9 @@ export function buildSpeedContent({
     components.push({ type: 'text', variant: 'body', text: TEXTS.empty });
   }
 
-  components.push({
-    type: 'button',
-    label: TEXTS.runTest,
-    icon: running ? 'loader' : 'play',
-    action: { key: WIDGET_ACTION.RUN_TEST },
-  });
+  if (showButton) {
+    components.push(runButton);
+  }
 
   return {
     ttl_seconds: running ? TTL_RUNNING_SECONDS : TTL_IDLE_SECONDS,
