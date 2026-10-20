@@ -151,6 +151,7 @@ const WIDGET_TEXT_BOUNDS = {
   latencyChart: 40,
   lastTest: STATUS_MAX,
   server: STATUS_MAX,
+  publicIp: STATUS_MAX,
   status: STATUS_MAX,
   running: STATUS_MAX,
   unknown: STATUS_MAX,
@@ -185,6 +186,7 @@ test('the toasts have the four languages and stay under 200 characters', () => {
     upload: 9999.99,
     ping: 999.99,
     server: { sponsor: 'A very long sponsor name for a server', name: 'Somewhere far away' },
+    ip: '2001:db8:ffff:ffff:ffff:ffff:ffff:ffff',
   });
   assertTexts('resultToast', toast, { max: 200 });
 });
@@ -196,6 +198,7 @@ test('the connection status has the four languages', () => {
 test('every action message has the four languages', () => {
   assert.deepEqual(Object.keys(ACTION_TEXTS).sort(), [
     'autoSelection',
+    'cloudflareEngine',
     'configuredServer',
     'testResult',
   ]);
@@ -216,6 +219,14 @@ test('the action handlers answer in the four languages, placeholders filled', as
   const server = { id: '32565', sponsor: 'Free', name: 'Marseille', country: 'France' };
   setEngineForTests({
     runSpeedtest: async () => ({ download: 1, upload: 2, ping: 3, jitter: 4, server }),
+    runCloudflareTest: async () => ({
+      download: 1,
+      upload: 2,
+      ping: 3,
+      jitter: 4,
+      server: { id: 'CDG', sponsor: 'Cloudflare', name: 'CDG', country: 'FR' },
+      ip: '192.0.2.10',
+    }),
     listServers: async () => [{ ...server, distance: 12 }],
   });
   try {
@@ -224,6 +235,12 @@ test('the action handlers answer in the four languages, placeholders filled', as
       await speedtest.actions.list_servers(fakeGladys, { config: normalizeConfig() }),
       await speedtest.actions.list_servers(fakeGladys, {
         config: normalizeConfig({ server_id: '32565' }),
+      }),
+      await speedtest.actions.run_speedtest(fakeGladys, {
+        config: normalizeConfig({ engine: 'cloudflare', show_ip: true }),
+      }),
+      await speedtest.actions.list_servers(fakeGladys, {
+        config: normalizeConfig({ engine: 'cloudflare' }),
       }),
     ];
     for (const message of messages) {
@@ -264,5 +281,19 @@ test('every widget content is fully translated and valid', () => {
         }
       }
     }
+  }
+});
+
+test('the documentation exists in the four languages, with the same sections', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const sections = {};
+  for (const lang of LANGUAGES) {
+    const doc = await readFile(new URL(`../docs/${lang}.md`, import.meta.url), 'utf8');
+    assert.ok(doc.length >= 300, `docs/${lang}.md is too short`);
+    sections[lang] = doc.match(/^#{1,2} /gm).length;
+    assert.match(doc, /Cloudflare/, `docs/${lang}.md describes the Cloudflare engine`);
+  }
+  for (const lang of LANGUAGES) {
+    assert.equal(sections[lang], sections.en, `docs/${lang}.md has the sections of docs/en.md`);
   }
 });

@@ -1,0 +1,124 @@
+# Speedtest.net & Cloudflare para Gladys Assistant
+
+Mida periódicamente su conexión a Internet, directamente desde Gladys, con la
+red mundial de servidores de Speedtest.net o la prueba de velocidad de
+Cloudflare. Cada prueba alimenta cuatro sensores que puede mostrar en gráficos
+en el panel y usar en escenas:
+
+| Sensor       | Unidad | Lo que indica                                                  |
+| ------------ | ------ | -------------------------------------------------------------- |
+| **Download** | Mbit/s | La velocidad a la que llegan los datos a su casa               |
+| **Upload**   | Mbit/s | La velocidad a la que salen los datos de su casa               |
+| **Ping**     | ms     | El tiempo de reacción de la conexión (cuanto menos, mejor)     |
+| **Jitter**   | ms     | La estabilidad de ese tiempo de reacción (cuanto menos, mejor) |
+
+Usos típicos: comprobar lo que su proveedor ofrece realmente, recibir un aviso
+de una escena cuando la descarga baja de lo que paga, o detectar que una línea
+de respaldo (conmutación 4G…) ha tomado el relevo.
+
+## Cómo funciona una prueba
+
+La integración habla directamente con la infraestructura de Speedtest.net — sin
+cuenta, sin clave de API, sin software de Ookla instalado. Por defecto, sondea
+los servidores más cercanos, se queda con el más sano y mide la latencia, la
+descarga y la subida (unos 25 segundos en total). También puede fijar un
+servidor: el botón **Listar servidores cercanos** muestra los ID, que puede
+pegar en el campo **ID del servidor Speedtest.net**.
+
+## Elegir el motor
+
+El campo **Motor de prueba** elige contra quién mide. Los dos motores alimentan
+los mismos cuatro sensores, con la misma programación, las mismas conexiones
+paralelas y la misma duración de medición: al cambiar de motor conserva el
+dispositivo, su historial y sus escenas.
+
+- **Speedtest.net** (por defecto): un servidor cercano de la red Speedtest.net,
+  elegido automáticamente o fijado por su ID.
+- **Cloudflare**: el punto de presencia más cercano de la red de Cloudflare, el
+  de [speed.cloudflare.com](https://speed.cloudflare.com/). Sin servidor que
+  elegir, sin cuenta. El widget lo muestra como _Cloudflare_ seguido del código
+  de aeropuerto de su ciudad (_MAD_ para Madrid, _CDG_ para París…).
+
+El motor Cloudflare también puede mostrar **su dirección IP pública**, tal como
+la ve Cloudflare: active **Mostrar mi IP pública (Cloudflare)**. Aparece
+entonces en el widget y en el resultado de la prueba manual, y se guarda con el
+último resultado en el almacenamiento de la integración. Nunca se escribe en
+los registros. Desactivado por defecto.
+
+Cloudflare mide la latencia sobre una petición vacía, menos el tiempo de
+procesamiento que indica su servidor, y se queda con la mejor de 20 muestras;
+el jitter es la diferencia media entre muestras sucesivas, como con
+Speedtest.net. Las cifras de los dos motores son cercanas pero no idénticas:
+compare una línea consigo misma, con un mismo motor.
+
+## Lo que conviene saber
+
+- **Una prueba satura la conexión mientras dura.** En líneas muy rápidas, los
+  resultados también son algo conservadores, porque la medición comparte la CPU
+  con los límites que Gladys impone a las integraciones.
+- **Una prueba transfiere datos reales** — varios cientos de MB por prueba en
+  una línea rápida, sea cual sea el motor (en una fibra gigabit, hasta unos
+  1,5 GB por sentido con los ajustes por defecto). Si su tarifa tiene un límite
+  de datos, aumente el intervalo entre pruebas o desactive las pruebas
+  automáticas y use solo el botón manual.
+- **Cloudflare limita el uso intensivo.** Tras mucho tráfico en poco tiempo
+  (dos pruebas gigabit con pocos minutos de diferencia, en nuestros ensayos),
+  rechaza durante un tiempo las descargas grandes con un error HTTP 429: la
+  prueba falla entonces con un mensaje que lo indica, y la siguiente prueba
+  programada lo vuelve a intentar. Una prueba automática nunca se lanza con
+  más frecuencia que cada 10 minutos.
+- Las pruebas programadas siguen el ajuste **Intervalo entre pruebas** (por
+  defecto: una prueba por hora). El botón **Iniciar una prueba de velocidad**
+  funciona en cualquier momento.
+
+## Widget del panel
+
+Con Gladys 5.1 o posterior, la integración añade un widget **Velocidad de
+Internet** al editor del panel (**Agregar → Speedtest.net & Cloudflare**).
+Muestra:
+
+- dos mosaicos lado a lado, descarga y subida: en Mb/s enteros, o en Gb/s con
+  un decimal a partir de 1000 Mb/s (1,2 Gb/s);
+- un gráfico de áreas del historial de dos sensores: **Gráfico** elige
+  _Descarga y subida_ (por defecto) o _Ping y jitter_, **Periodo del
+  historial** las últimas 24 horas, la última semana (por defecto) o el último
+  mes;
+- el ping y el jitter de la última prueba, cuándo se hizo y el servidor usado
+  (Speedtest.net: operador y ciudad; Cloudflare: _Cloudflare · MAD_), su IP
+  pública si la ha pedido, y _Prueba en curso_ mientras una prueba se ejecuta;
+- un botón **Iniciar prueba**. El resultado aparece como notificación al
+  terminar la prueba (alrededor de medio minuto). Pulsarlo mientras ya hay una
+  prueba en curso no lanza otra.
+
+Conviene saber:
+
+- El gráfico lee los sensores del dispositivo: añada el dispositivo a Gladys
+  (**Integraciones → Speedtest.net & Cloudflare → Descubrir**) para que se
+  llene.
+- El widget solo redondea lo que muestra: Gladys guarda los valores medidos,
+  con decimales, en los sensores y su historial.
+- La integración conserva el último resultado entre reinicios. Antes de la
+  primera prueba, los mosaicos muestran un guion y el widget indica que todavía
+  no hay ningún resultado.
+- Los periodos del gráfico y el historial largo siguen sus ajustes de Gladys de
+  conservación de los datos de los dispositivos.
+
+## Solución de problemas
+
+- _Resultados más bajos que la aplicación oficial_: aumente **Conexiones
+  paralelas** (las líneas rápidas se llenan mejor con 6–8) o la **Duración de
+  medición**.
+- _La prueba falla_: puede que el servidor más cercano esté caído — fije otro
+  **ID del servidor Speedtest.net**, o vacíe el campo para que la selección automática
+  descarte los servidores defectuosos. Con el motor Cloudflare, un error
+  _HTTP 429_ significa que Cloudflare limita su dirección durante un tiempo:
+  aumente el intervalo o reduzca la duración de medición.
+- _El ID del servidor no cambia nada_: solo sirve para el motor Speedtest.net.
+- _Registros_: en el nivel por defecto, la integración registra su inicio, sus
+  pruebas manuales y el primer fallo de la prueba automática (y luego una línea
+  cuando vuelve a funcionar). Para ver cada prueba, su servidor y su
+  resultado, defina la variable de entorno `LOG_LEVEL=debug` en el contenedor.
+
+Esta integración es un proyecto comunitario independiente, sin afiliación ni
+respaldo de Ookla ni de Cloudflare. Speedtest® es una marca de Ookla, LLC;
+Cloudflare® es una marca de Cloudflare, Inc.

@@ -2,8 +2,10 @@
 
 [Gladys Assistant](https://gladysassistant.com) external integration that
 measures your internet connection on a schedule against
-[Speedtest.net](https://www.speedtest.net) servers — the Gladys counterpart of
-Home Assistant's popular Speedtest.net integration.
+[Speedtest.net](https://www.speedtest.net) servers or
+[Cloudflare's speed test](https://speed.cloudflare.com) — the Gladys
+counterpart of Home Assistant's popular Speedtest.net integration and of the
+community `cloudflare_speed_test` one.
 
 One virtual device, four historized sensors: **download** (Mbit/s), **upload**
 (Mbit/s), **ping** (ms) and **jitter** (ms), and a dashboard widget. Chart them
@@ -14,9 +16,11 @@ taking over.
 
 ## Install
 
-In Gladys: **Integrations → search "Speedtest.net" → Install**. The user
-documentation (configuration, data-usage caveats, troubleshooting) lives in
-[docs/en.md](docs/en.md) / [docs/fr.md](docs/fr.md) and is shown by Gladys
+In Gladys: **Integrations → search "Speedtest" → Install**, or **Integrations →
+Install from GitHub** with `https://github.com/guim31/gladys-speedtest`. The
+user documentation (configuration, data-usage caveats, troubleshooting) lives
+in [docs/en.md](docs/en.md), [docs/fr.md](docs/fr.md),
+[docs/de.md](docs/de.md) and [docs/es.md](docs/es.md) and is shown by Gladys
 during installation.
 
 ## How it measures
@@ -37,6 +41,26 @@ OoklaServer replies **500 to any request without a `User-Agent`**, and upload
 throughput needs **big write chunks + keep-alive connections**, otherwise the
 event loop (not the line) is what you measure.
 
+## The Cloudflare engine
+
+Picked by the `engine` config field (`speedtest`, the default, or
+`cloudflare`). `src/cloudflare.js` reuses the throughput loops of
+`src/speedtest.js` (same connections, warmup and window) with Cloudflare's
+paths, the ones speed.cloudflare.com uses:
+
+- `GET /cdn-cgi/trace` — point of presence (`colo`), country, public IP;
+- `GET /__down?bytes=0` — latency samples: time to the response headers minus
+  the server processing time of its `Server-Timing` header (20 samples, best
+  one and mean successive delta, as above);
+- `GET /__down?bytes=25000000` and `POST /__up` — download and upload
+  (100 MB per request is refused with a 403).
+
+Cloudflare answers **429 to large downloads after heavy use** (two gigabit
+tests in five minutes were enough): the test fails with an explicit message
+and the next one tries again. The public IP is kept only when `show_ip` is on,
+and never logged. A live test runs with `CLOUDFLARE_LIVE=1 npm test` (one
+connection, 5 s per direction).
+
 ## Dashboard widget
 
 Gladys 5.1+ renders third-party widgets from a declarative vocabulary (SDK
@@ -47,7 +71,7 @@ Internet**):
 | ------------------------------------------------- | ---------------------------------------------- |
 | Two tiles: download, upload (717 Mb/s, 1.2 Gb/s)  | the last result, formatted by the widget       |
 | A history area chart                              | two features, per the `chart` setting          |
-| Ping, jitter, last test (date), server            | `/data/last-result.json`, kept across restarts |
+| Ping, jitter, last test (date), server, public IP | `/data/last-result.json`, kept across restarts |
 | _Test in progress_ (info color) while a test runs | the shared `currentRun` of the device module   |
 | A **Run a test** button                           | the widget action `run_test` (toast ≤ 200)     |
 
@@ -85,6 +109,7 @@ The decentralized store indexer picks up the new version within the hour.
 
 ## Legal
 
-Independent community project, not affiliated with or endorsed by Ookla.
-Speedtest® is a trademark of Ookla, LLC. Code under the
+Independent community project, not affiliated with or endorsed by Ookla or
+Cloudflare. Speedtest® is a trademark of Ookla, LLC; Cloudflare® is a
+trademark of Cloudflare, Inc. Code under the
 [Apache-2.0](LICENSE) license.

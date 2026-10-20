@@ -19,6 +19,33 @@ Le widget n'a **jamais été vu tourner dans une vraie Gladys** par une session 
 lint et le validateur du store sont passés. À vérifier en réel : le rendu des tuiles liées avant que l'appareil soit ajouté, la fenêtre de l'historique, le
 toast du bouton, et `/data/last-result.json` relu après redémarrage.
 
+## Moteur Cloudflare (1.4.0, branche `feat/cloudflare`, 20/10/2026)
+
+- Choix de moteur par le champ de config `engine` (`speedtest` par défaut, `cloudflare`) :
+  **même appareil, mêmes quatre capteurs**, même planification et mêmes garde-fous
+  (`connections`, `duration`, intervalle de 600 s au moins). Un second appareil aurait doublé
+  le trafic des tests automatiques et le widget ; l'appareil existant ne change pas (pas de
+  `structure_changed`). Clés figées : `engine`, valeurs `speedtest` / `cloudflare`, `show_ip`.
+- `src/cloudflare.js` réutilise `measureDownload` / `measureUpload` de `src/speedtest.js`, qui
+  prennent maintenant des chemins (`OOKLA_PATHS` par défaut, `CLOUDFLARE_PATHS`). Mesuré en réel
+  depuis le Beelink (fibre gigabit, 4 connexions, 5 s) : ~896 / 850 Mbit/s, ping ~17 ms,
+  15 s, 164 Mo de RSS hors sandbox. Dans le conteneur verrouillé (256 Mo, `--read-only`, `CapDrop ALL`), 1 connexion :
+  ~485 / 390 Mbit/s, 16 s, 92 Mo de RSS, IP absente des logs en debug ; 19 Mo au repos.
+- Protocole vérifié le 20/10/2026 : `__down?bytes=25000000` accepté, `100000000` refusé en 403 ;
+  `__up` accepte 25 Mo par POST ; latence = temps jusqu'aux en-têtes d'un `__down?bytes=0`
+  moins la somme des `dur=` de `Server-Timing` (`cfSpeedEdge` + `cfSpeedWorker`, 30 à 60 ms à
+  eux seuls) ; premier échantillon jeté (poignée de main).
+- **Piège** : après deux tests gigabit à cinq minutes d'écart (~3 Go), Cloudflare répond **429**
+  aux `__down` de 10 Mo et plus (les petits passent encore) pendant **environ une heure**
+  (mesuré le 20/10 : levé au bout de 60 min). Ne pas
+  enchaîner les tests réels ; `rateLimitError` remplace le code nu par un message clair. Ne pas
+  contourner la limite en réduisant la taille des requêtes.
+- L'IP publique (`/cdn-cgi/trace`) n'est gardée qu'avec `show_ip` (mémoire, `/data`, widget,
+  message d'action), **jamais journalisée** : `test/cloudflare.test.js` le tient. Le serveur
+  affiché est `Cloudflare · <colo>` (code IATA).
+- `list_servers` reste celui de Speedtest.net ; avec le moteur Cloudflare, il le dit en tête.
+- Test réel optionnel : `CLOUDFLARE_LIVE=1 node --test test/cloudflare.test.js`.
+
 ## Planification, polling et logs (maintenance SDK 0.15, 13/10/2026)
 
 - **Gladys ne sonde jamais l'appareil** : `should_poll: false` explicite, pas de
@@ -101,8 +128,8 @@ toast du bouton, et `/data/last-result.json` relu après redémarrage.
 - Restent en anglais : les noms des fonctionnalités (`Download`, `Upload`, `Ping`, `Jitter`), figés
   à la création et sans réglage de langue, et les erreurs du moteur, que le SDK transmet en simple
   chaîne (`e.message`).
-- La doc reste en `docs/en.md` et `docs/fr.md` : l'indexeur du store (5.1.4 / `DOCS_LANGUAGES`)
-  ne réhéberge que ces deux langues, et le cœur retombe sur `en` pour les autres.
+- La doc existe en `docs/{en,fr,de,es}.md` depuis 1.4.0 (le store publie de/es depuis
+  Gladys 5.2.0) ; `test/i18n.test.js` vérifie que les quatre ont les mêmes sections.
 
 ## Pièges du protocole OoklaServer
 

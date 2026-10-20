@@ -26,7 +26,7 @@ const logger = createLogger({ name: 'speedtest-engine' });
 const SERVER_LIST_URL = 'https://www.speedtest.net/api/js/servers';
 // OoklaServer answers 500 to any request WITHOUT a User-Agent header: always
 // send one (found the hard way — the 500 arrives before the upload body).
-const USER_AGENT = 'gladys-speedtest (+https://github.com/guim31/gladys-speedtest)';
+export const USER_AGENT = 'gladys-speedtest (+https://github.com/guim31/gladys-speedtest)';
 // Bytes asked per download request: big enough to keep the socket busy for a
 // while at gigabit speeds, small enough to cycle on slow links.
 const DOWNLOAD_REQUEST_BYTES = 25_000_000;
@@ -47,6 +47,12 @@ const PING_SAMPLES = 8;
 const CANDIDATE_PING_SAMPLES = 3;
 // How many nearby servers the auto-selection races against each other.
 const CANDIDATE_COUNT = 5;
+// The request paths of an OoklaServer host. Another engine (src/cloudflare.js)
+// passes its own to measureDownload / measureUpload.
+export const OOKLA_PATHS = {
+  download: () => `/download?nocache=${randomUUID()}&size=${DOWNLOAD_REQUEST_BYTES}`,
+  upload: () => `/upload?nocache=${randomUUID()}`,
+};
 
 /**
  * Convert a byte count over a time window to Mbit/s (2 decimals).
@@ -187,6 +193,22 @@ export async function selectServer(config) {
 }
 
 /**
+ * With `paths.failOnRateLimit`, a worker stopped by HTTP 429 fails the whole
+ * measurement: the bytes counted before it would publish a falsely low speed.
+ */
+function throwIfRateLimited(results, paths) {
+  if (!paths.failOnRateLimit) {
+    return;
+  }
+  const limited = results.find(
+    (r) => r.status === 'rejected' && /HTTP 429/.test(r.reason?.message ?? ''),
+  );
+  if (limited) {
+    throw limited.reason;
+  }
+}
+
+/**
  * Shared measurement clock: warmup traffic is discarded, then bytes are
  * counted over exactly `duration` seconds and every worker is stopped.
  */
@@ -219,7 +241,7 @@ function createMeasurementWindow(duration, onStop) {
  * GET /download?size=N, discarding the bytes and counting them.
  * @returns {Promise<number>} Mbit/s
  */
-export async function measureDownload(host, { connections, duration }) {
+export async function measureDownload(host, { connections, duration }, paths = OOKLA_PATHS) {
   const controller = new AbortController();
   const window = createMeasurementWindow(duration, () => controller.abort());
 
@@ -227,11 +249,12 @@ export async function measureDownload(host, { connections, duration }) {
     let consecutiveErrors = 0;
     for (;;) {
       try {
-        const res = await fetch(
-          `https://${host}/download?nocache=${randomUUID()}&size=${DOWNLOAD_REQUEST_BYTES}`,
-          { headers: { 'user-agent': USER_AGENT }, signal: controller.signal },
-        );
+        const res = await fetch(`https://${host}${paths.download()}`, {
+          headers: { 'user-agent': USER_AGENT },
+          signal: controller.signal,
+        });
         if (!res.ok) {
+          await res.body?.cancel();
           throw new Error(`Download request failed (HTTP ${res.status})`);
         }
         for await (const chunk of res.body) {
@@ -252,6 +275,7 @@ export async function measureDownload(host, { connections, duration }) {
 
   try {
     const results = await Promise.allSettled(Array.from({ length: connections }, () => worker()));
+    throwIfRateLimited(results, paths);
     if (window.counter.bytes === 0) {
       const failure = results.find((r) => r.status === 'rejected');
       throw failure?.reason ?? new Error('Download test received no data');
@@ -269,14 +293,14 @@ export async function measureDownload(host, { connections, duration }) {
  * window closes. Bytes are counted at socket-write time, the same
  * approximation browser-based speed tests rely on.
  */
-function uploadOnce(host, counter, active, signal) {
+function uploadOnce(host, path, counter, active, signal) {
   return new Promise((resolve, reject) => {
     const [hostname, port] = host.split(':');
     const req = https.request({
       agent: uploadAgent,
       hostname,
       port: Number(port) || 443,
-      path: `/upload?nocache=${randomUUID()}`,
+      path,
       method: 'POST',
       headers: {
         'user-agent': USER_AGENT,
@@ -342,7 +366,7 @@ function uploadOnce(host, counter, active, signal) {
  * Upload throughput: `connections` parallel workers loop on POST /upload.
  * @returns {Promise<number>} Mbit/s
  */
-export async function measureUpload(host, { connections, duration }) {
+export async function measureUpload(host, { connections, duration }, paths = OOKLA_PATHS) {
   const controller = new AbortController();
   const active = new Set();
   const window = createMeasurementWindow(duration, () => {
@@ -356,7 +380,7 @@ export async function measureUpload(host, { connections, duration }) {
     let consecutiveErrors = 0;
     while (!controller.signal.aborted) {
       try {
-        await uploadOnce(host, window.counter, active, controller.signal);
+        await uploadOnce(host, paths.upload(), window.counter, active, controller.signal);
         consecutiveErrors = 0;
       } catch (err) {
         consecutiveErrors += 1;
@@ -369,6 +393,7 @@ export async function measureUpload(host, { connections, duration }) {
 
   try {
     const results = await Promise.allSettled(Array.from({ length: connections }, () => worker()));
+    throwIfRateLimited(results, paths);
     if (window.counter.bytes === 0) {
       const failure = results.find((r) => r.status === 'rejected');
       throw failure?.reason ?? new Error('Upload test sent no data');

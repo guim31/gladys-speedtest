@@ -1,9 +1,26 @@
 # Changelog
 
-Notable changes of the Speedtest.net integration. Releases are cut by the
+Notable changes of the Speedtest.net & Cloudflare integration. Releases are cut by the
 Release workflow; their GitHub release carries the full notes.
 
 ## [Unreleased]
+
+### Added
+
+- **Cloudflare engine**: a new **Test engine** setting measures against
+  Cloudflare's closest point of presence (the test of speed.cloudflare.com)
+  instead of a Speedtest.net server. No account, no server to pick; the same
+  four sensors, schedule, connections and measurement time, so the device,
+  its history and your scenes stay as they are. Speedtest.net remains the
+  default.
+- The widget and the test result show the Cloudflare point of presence
+  (_Cloudflare · CDG_), and, if you turn on **Show my public IP
+  (Cloudflare)**, the public IP address Cloudflare sees. It is never written
+  to the logs.
+- A clear message when Cloudflare limits a test (HTTP 429) after heavy use.
+- The documentation now exists in German and Spanish too.
+
+## [1.3.1] - 2026-10-13
 
 ### Changed
 

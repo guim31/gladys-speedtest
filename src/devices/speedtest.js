@@ -11,7 +11,8 @@ import {
   DEVICE_FEATURE_TYPES,
   DEVICE_FEATURE_UNITS,
 } from '@gladysassistant/integration-sdk';
-import * as defaultEngine from '../speedtest.js';
+import * as speedtestEngine from '../speedtest.js';
+import { runCloudflareTest } from '../cloudflare.js';
 import { format } from '../i18n.js';
 import { createResultStore } from '../store.js';
 import {
@@ -45,6 +46,12 @@ export const ACTION_TEXTS = {
     de: 'Konfigurierter Server: {id}. Nächstgelegene Server (ID — Betreiber):\n{lines}',
     es: 'Servidor configurado: {id}. Servidores más cercanos (ID — operador):\n{lines}',
   },
+  cloudflareEngine: {
+    en: 'The Cloudflare engine is selected: it picks its point of presence by itself, these servers only serve the Speedtest.net engine.\n{lines}',
+    fr: "Le moteur Cloudflare est choisi : il trouve seul son point de présence, ces serveurs ne servent qu'au moteur Speedtest.net.\n{lines}",
+    de: 'Die Cloudflare-Engine ist gewählt und findet ihren Standort selbst; diese Server gelten nur für die Speedtest.net-Engine.\n{lines}',
+    es: 'El motor Cloudflare está seleccionado: elige por sí mismo su punto de presencia; estos servidores solo sirven para el motor Speedtest.net.\n{lines}',
+  },
   autoSelection: {
     en: 'Auto-selection is active. Closest servers (ID — sponsor):\n{lines}',
     fr: 'La sélection automatique est active. Serveurs les plus proches (ID — opérateur) :\n{lines}',
@@ -61,8 +68,13 @@ const FEATURE = {
   JITTER: 'jitter',
 };
 
-// Engine indirection: tests swap the real network engine for a fake one
+// Engine indirection: tests swap the real network engines for fake ones
 // (same pattern as the template's `simulateLanSession` hook).
+const defaultEngine = {
+  runSpeedtest: speedtestEngine.runSpeedtest,
+  listServers: speedtestEngine.listServers,
+  runCloudflareTest,
+};
 let engine = defaultEngine;
 export function setEngineForTests(fakeEngine) {
   engine = fakeEngine ?? defaultEngine;
@@ -115,7 +127,12 @@ async function runAndPublish(gladys, config) {
   currentRun = (async () => {
     // "Last test" dates the launch of the test, not its end.
     const at = new Date().toISOString();
-    const result = await engine.runSpeedtest(config);
+    const { ip, ...measured } =
+      config.engine === 'cloudflare'
+        ? await engine.runCloudflareTest(config)
+        : await engine.runSpeedtest(config);
+    // The public IP is kept (in memory and in /data) only on request.
+    const result = config.show_ip && ip ? { ...measured, ip } : measured;
     const ids = gladys.externalIds(DEVICE_TYPE, PLATFORM_DEVICE_ID);
     await gladys.publishStates([
       { device_feature_external_id: ids.feature(FEATURE.DOWNLOAD), state: result.download },
@@ -220,6 +237,11 @@ export const speedtest = {
   // failure that repeats (connection down for hours) is logged once, then
   // once when the tests work again.
   startPush(gladys, config) {
+    // Called on every connection and config save: the option turned off
+    // forgets the IP kept by an earlier test, in memory and in /data.
+    if (!config.show_ip && lastResult?.ip) {
+      lastResult = store.save({ ...lastResult, ip: null }) ?? { ...lastResult, ip: null };
+    }
     if (!config.auto_test) {
       logger.info('Automatic tests disabled');
       return () => {};
@@ -275,17 +297,29 @@ export const speedtest = {
   actions: {
     async run_speedtest(gladys, { config }) {
       logger.info('Manual speed test requested');
-      const { download, upload, ping, server } = await runAndPublish(gladys, config);
-      const where = `${server.sponsor}, ${server.name}`;
-      return format(ACTION_TEXTS.testResult, { download, upload, ping, where });
+      const { download, upload, ping, server, ip } = await runAndPublish(gladys, config);
+      const where = [server.sponsor, server.name].filter(Boolean).join(', ');
+      const message = format(ACTION_TEXTS.testResult, { download, upload, ping, where });
+      // "IP" reads the same in the four languages.
+      return ip
+        ? Object.fromEntries(
+            Object.entries(message).map(([lang, text]) => [lang, `${text} · IP ${ip}`]),
+          )
+        : message;
     },
 
     async list_servers(gladys, { config }) {
       logger.info('Listing nearby Speedtest.net servers');
-      const servers = await engine.listServers({ limit: 10 });
-      const lines = servers
-        .map((s) => `${s.id} — ${s.sponsor} (${s.name}, ${s.country}) · ${s.distance} km`)
-        .join('\n');
+      const describe = (servers) =>
+        servers
+          .map((s) => `${s.id} — ${s.sponsor} (${s.name}, ${s.country}) · ${s.distance} km`)
+          .join('\n');
+      if (config.engine === 'cloudflare') {
+        // The list is a bonus here: say which engine runs even without it.
+        const lines = await engine.listServers({ limit: 10 }).then(describe, () => '');
+        return format(ACTION_TEXTS.cloudflareEngine, { lines });
+      }
+      const lines = describe(await engine.listServers({ limit: 10 }));
       return config.server_id
         ? format(ACTION_TEXTS.configuredServer, { id: config.server_id, lines })
         : format(ACTION_TEXTS.autoSelection, { lines });
@@ -297,7 +331,7 @@ export const speedtest = {
   // `action` answers its buttons. Both are served from memory: no network.
   widgets: {
     [WIDGET.SPEED]: {
-      get(gladys, { settings, language }) {
+      get(gladys, { settings, language, config }) {
         const ids = gladys.externalIds(DEVICE_TYPE, PLATFORM_DEVICE_ID);
         return buildSpeedContent({
           features: {
@@ -306,7 +340,7 @@ export const speedtest = {
             ping: ids.feature(FEATURE.PING),
             jitter: ids.feature(FEATURE.JITTER),
           },
-          lastResult,
+          lastResult: lastResult?.ip && !config?.show_ip ? { ...lastResult, ip: null } : lastResult,
           running: isRunning(),
           settings,
           language,

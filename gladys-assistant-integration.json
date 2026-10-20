@@ -1,12 +1,12 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Speedtest.net",
+  "name": "Speedtest.net & Cloudflare",
   "description": {
-    "en": "Measure your internet speed on a schedule using Speedtest.net servers.",
-    "fr": "Mesurez périodiquement le débit de votre connexion via les serveurs Speedtest.net.",
-    "de": "Miss regelmäßig deine Internetgeschwindigkeit über die Server von Speedtest.net.",
-    "es": "Mida periódicamente la velocidad de su conexión con los servidores de Speedtest.net."
+    "en": "Measure your internet speed on a schedule with Speedtest.net or Cloudflare.",
+    "fr": "Mesurez périodiquement le débit de votre connexion avec Speedtest.net ou Cloudflare.",
+    "de": "Miss regelmäßig deine Internetgeschwindigkeit mit Speedtest.net oder Cloudflare.",
+    "es": "Mida periódicamente la velocidad de su conexión con Speedtest.net o Cloudflare."
   },
   "version": "1.3.1",
   "docker_image": "ghcr.io/guim31/gladys-speedtest:1.3.1",
@@ -25,10 +25,10 @@
         "es": "Funcionamiento"
       },
       "description": {
-        "en": "A test saturates your connection for about 25 seconds and can transfer several hundred MB per run: mind your data cap when choosing the interval. Results are stored as four sensors (download, upload, ping, jitter) you can chart and use in scenes.",
-        "fr": "Un test sature la connexion pendant environ 25 secondes et peut transférer plusieurs centaines de Mo : tenez compte de votre quota de données en choisissant l'intervalle. Les résultats alimentent quatre capteurs (débits, ping, gigue) exploitables en graphiques et dans les scènes.",
-        "de": "Ein Test lastet deine Verbindung etwa 25 Sekunden lang voll aus und kann pro Durchlauf mehrere hundert MB übertragen: Denk bei der Wahl des Intervalls an dein Datenvolumen. Die Ergebnisse landen in vier Sensoren (Download, Upload, Ping, Jitter), die du in Diagrammen und Szenen nutzen kannst.",
-        "es": "Una prueba satura la conexión durante unos 25 segundos y puede transferir varios cientos de MB: tenga en cuenta su límite de datos al elegir el intervalo. Los resultados alimentan cuatro sensores (descarga, subida, ping, jitter) que puede usar en gráficos y escenas."
+        "en": "A test saturates your connection for about 25 seconds and can transfer several hundred MB per run, whatever the engine: mind your data cap when choosing the interval. Results are stored as four sensors (download, upload, ping, jitter) you can chart and use in scenes.",
+        "fr": "Un test sature la connexion pendant environ 25 secondes et peut transférer plusieurs centaines de Mo, quel que soit le moteur : tenez compte de votre quota de données en choisissant l'intervalle. Les résultats alimentent quatre capteurs (débits, ping, gigue) exploitables en graphiques et dans les scènes.",
+        "de": "Ein Test lastet deine Verbindung etwa 25 Sekunden lang voll aus und kann pro Durchlauf mehrere hundert MB übertragen, egal mit welcher Engine: Denk bei der Wahl des Intervalls an dein Datenvolumen. Die Ergebnisse landen in vier Sensoren (Download, Upload, Ping, Jitter), die du in Diagrammen und Szenen nutzen kannst.",
+        "es": "Una prueba satura la conexión durante unos 25 segundos y puede transferir varios cientos de MB, sea cual sea el motor: tenga en cuenta su límite de datos al elegir el intervalo. Los resultados alimentan cuatro sensores (descarga, subida, ping, jitter) que puede usar en gráficos y escenas."
       },
       "links": [
         {
@@ -38,6 +38,53 @@
             "fr": "Speedtest.net",
             "de": "Speedtest.net",
             "es": "Speedtest.net"
+          }
+        },
+        {
+          "url": "https://speed.cloudflare.com/",
+          "label": {
+            "en": "Cloudflare Speed Test",
+            "fr": "Cloudflare Speed Test",
+            "de": "Cloudflare Speed Test",
+            "es": "Cloudflare Speed Test"
+          }
+        }
+      ]
+    },
+    {
+      "key": "engine",
+      "type": "select",
+      "label": {
+        "en": "Test engine",
+        "fr": "Moteur de test",
+        "de": "Test-Engine",
+        "es": "Motor de prueba"
+      },
+      "description": {
+        "en": "Speedtest.net measures against a nearby server; Cloudflare against its closest point of presence, without choosing a server.",
+        "fr": "Speedtest.net mesure contre un serveur proche ; Cloudflare contre son point de présence le plus proche, sans choix de serveur.",
+        "de": "Speedtest.net misst gegen einen Server in der Nähe, Cloudflare gegen seinen nächstgelegenen Standort, ohne Serverwahl.",
+        "es": "Speedtest.net mide contra un servidor cercano; Cloudflare contra su punto de presencia más cercano, sin elegir servidor."
+      },
+      "required": false,
+      "default": "speedtest",
+      "options": [
+        {
+          "value": "speedtest",
+          "label": {
+            "en": "Speedtest.net",
+            "fr": "Speedtest.net",
+            "de": "Speedtest.net",
+            "es": "Speedtest.net"
+          }
+        },
+        {
+          "value": "cloudflare",
+          "label": {
+            "en": "Cloudflare",
+            "fr": "Cloudflare",
+            "de": "Cloudflare",
+            "es": "Cloudflare"
           }
         }
       ]
@@ -84,10 +131,10 @@
       "key": "server_id",
       "type": "string",
       "label": {
-        "en": "Server ID (optional)",
-        "fr": "ID du serveur (optionnel)",
-        "de": "Server-ID (optional)",
-        "es": "ID del servidor (opcional)"
+        "en": "Speedtest.net server ID (optional)",
+        "fr": "ID du serveur Speedtest.net (optionnel)",
+        "de": "Speedtest.net-Server-ID (optional)",
+        "es": "ID del servidor Speedtest.net (opcional)"
       },
       "description": {
         "en": "Leave empty to auto-select the closest healthy server. Use the \"List nearby servers\" button to find IDs.",
@@ -102,6 +149,24 @@
         "de": "32565",
         "es": "32565"
       }
+    },
+    {
+      "key": "show_ip",
+      "type": "boolean",
+      "label": {
+        "en": "Show my public IP (Cloudflare)",
+        "fr": "Afficher mon IP publique (Cloudflare)",
+        "de": "Meine öffentliche IP anzeigen (Cloudflare)",
+        "es": "Mostrar mi IP pública (Cloudflare)"
+      },
+      "description": {
+        "en": "Cloudflare engine only: keeps the public IP address it sees and shows it in the widget and the test result. Never written to the logs.",
+        "fr": "Moteur Cloudflare seulement : garde l'adresse IP publique qu'il voit et l'affiche dans le widget et le résultat du test. Jamais écrite dans les logs.",
+        "de": "Nur für die Cloudflare-Engine: speichert die öffentliche IP-Adresse, die sie sieht, und zeigt sie im Widget und im Testergebnis. Nie in den Logs.",
+        "es": "Solo motor Cloudflare: guarda la dirección IP pública que ve y la muestra en el widget y en el resultado. Nunca se escribe en los registros."
+      },
+      "required": false,
+      "default": false
     },
     {
       "key": "connections",

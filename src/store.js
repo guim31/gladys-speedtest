@@ -31,7 +31,7 @@ export function defaultDataDir() {
  * @returns {{ at: string, download: number|null, upload: number|null,
  *   ping: number|null, jitter: number|null,
  *   server: { id: string|null, sponsor: string|null, name: string|null,
- *   country: string|null } }|null}
+ *   country: string|null }, ip: string|null }|null}
  */
 export function normalizeResult(raw) {
   if (!raw || typeof raw !== 'object') {
@@ -58,6 +58,8 @@ export function normalizeResult(raw) {
       name: text(server.name),
       country: text(server.country),
     },
+    // The public IP seen by Cloudflare, only when the user asked for it.
+    ip: text(raw.ip),
   };
 }
 

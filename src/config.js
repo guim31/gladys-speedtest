@@ -12,7 +12,11 @@
 
 // Defaults: they MUST stay consistent with the `default` values declared in the
 // `config_schema` of the manifest.
+export const ENGINES = ['speedtest', 'cloudflare'];
+
 export const DEFAULT_CONFIG = {
+  engine: 'speedtest', // 'speedtest' (Speedtest.net) or 'cloudflare' (speed.cloudflare.com)
+  show_ip: false, // keep and show the public IP seen by Cloudflare
   server_id: '', // '' = pick the closest healthy server automatically
   auto_test: true, // run a test on a schedule (internal timer, never Gladys polling)
   poll_frequency: 3600, // seconds between automatic tests
@@ -40,6 +44,9 @@ function toNumber(raw, fallback, min, max) {
  */
 export function normalizeConfig(raw = {}) {
   return {
+    engine: ENGINES.includes(raw.engine) ? raw.engine : DEFAULT_CONFIG.engine,
+    // Anything but an explicit true means false: the IP is opt-in.
+    show_ip: raw.show_ip === true || raw.show_ip === 'true',
     server_id: String(raw.server_id ?? DEFAULT_CONFIG.server_id).trim(),
     // Anything but an explicit false means true.
     auto_test: raw.auto_test !== false && raw.auto_test !== 'false',

@@ -86,6 +86,7 @@ export const TEXTS = {
   },
   lastTest: { en: 'Last test', fr: 'Dernier test', de: 'Letzter Test', es: 'Última prueba' },
   server: { en: 'Server', fr: 'Serveur', de: 'Server', es: 'Servidor' },
+  publicIp: { en: 'Public IP', fr: 'IP publique', de: 'Öffentliche IP', es: 'IP pública' },
   status: { en: 'Status', fr: 'État', de: 'Status', es: 'Estado' },
   running: { en: 'Test in progress', fr: 'Test en cours', de: 'Test läuft', es: 'Prueba en curso' },
   unknown: { en: 'Unknown', fr: 'Inconnu', de: 'Unbekannt', es: 'Desconocido' },
@@ -302,6 +303,14 @@ export function buildSpeedContent({
     if (server) {
       items.push({ label: TEXTS.server, value: server, icon: 'server' });
     }
+    // Only stored when the user turned the option on (Cloudflare engine).
+    if (lastResult.ip) {
+      items.push({
+        label: TEXTS.publicIp,
+        value: fit(lastResult.ip, STATUS_VALUE_MAX),
+        icon: 'globe',
+      });
+    }
   }
   if (running) {
     items.push({
@@ -338,7 +347,7 @@ export function buildSpeedContent({
 export function resultToast(result) {
   const { download, upload, ping } = result;
   const server = formatServer(result.server);
-  const where = server ? ` · ${server}` : '';
+  const where = (server ? ` · ${server}` : '') + (result.ip ? ` · IP ${result.ip}` : '');
   // Figures, units and the server name read the same in every language.
   const text = fit(
     `↓ ${download} Mbit/s · ↑ ${upload} Mbit/s · ping ${ping} ms${where}`,
