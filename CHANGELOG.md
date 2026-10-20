@@ -7,6 +7,12 @@ Release workflow; their GitHub release carries the full notes.
 
 ### Added
 
+- Widget setting "Display" (forum t/11382): _Full_ (default, unchanged),
+  _Speeds, ping and chart_ (three tiles and the chart) or _Speeds and ping_
+  (three tiles alone).
+
+### Added
+
 - **Cloudflare engine**: a new **Test engine** setting measures against
   Cloudflare's closest point of presence (the test of speed.cloudflare.com)
   instead of a Speedtest.net server. No account, no server to pick; the same

@@ -93,6 +93,8 @@ Speedtest.net & Cloudflare**). Il montre :
   du test (environ une demi-minute). Appuyer pendant qu'un test tourne déjà
   n'en lance pas un second.
 
+**Affichage** allège le widget : _Complet_ (par défaut) est la présentation ci-dessus ; _Débits, ping et graphique_ garde trois cases (débit descendant, montant, ping) et le graphique ; _Débits et ping_ garde les trois cases seules. Ces deux versions n'ont ni lignes d'état ni bouton : un test se lance toujours depuis la configuration de l'intégration.
+
 À savoir :
 
 - Le graphique lit les capteurs de l'appareil : ajoutez-le à Gladys

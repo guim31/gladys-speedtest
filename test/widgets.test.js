@@ -67,15 +67,20 @@ test('fit cuts long texts with an ellipsis and keeps short ones', () => {
 });
 
 test('normalizeSettings applies the manifest defaults to unknown values', () => {
-  assert.deepEqual(normalizeSettings(), { chart: DEFAULT_CHART, interval: DEFAULT_INTERVAL });
-  assert.deepEqual(normalizeSettings({ chart: 'nope', interval: 'last-year' }), {
+  assert.deepEqual(normalizeSettings(), {
     chart: DEFAULT_CHART,
     interval: DEFAULT_INTERVAL,
+    display: 'full',
   });
-  assert.deepEqual(normalizeSettings({ chart: 'latency', interval: 'last-month' }), {
-    chart: 'latency',
-    interval: 'last-month',
+  assert.deepEqual(normalizeSettings({ chart: 'nope', interval: 'last-year', display: 'x' }), {
+    chart: DEFAULT_CHART,
+    interval: DEFAULT_INTERVAL,
+    display: 'full',
   });
+  assert.deepEqual(
+    normalizeSettings({ chart: 'latency', interval: 'last-month', display: 'compact' }),
+    { chart: 'latency', interval: 'last-month', display: 'compact' },
+  );
   assert.ok(CHARTS.includes(DEFAULT_CHART));
   assert.ok(INTERVALS.includes(DEFAULT_INTERVAL));
 });
@@ -384,4 +389,38 @@ test('toasts stay under 200 characters per language', () => {
   for (const text of Object.values(ALREADY_RUNNING_TOAST)) {
     assert.ok(text.length <= 200);
   }
+});
+
+test('display: three tiles and the chart ("standard"), three tiles alone ("compact")', () => {
+  const view = (display, lastResult = LAST_RESULT) =>
+    buildSpeedContent({
+      features: FEATURES,
+      lastResult,
+      running: false,
+      settings: { display },
+      language: 'fr',
+      now: NOW,
+      timeZone: 'UTC',
+    });
+  const standard = view('standard');
+  assert.deepEqual(validateWidgetContent(standard), []);
+  assert.deepEqual(
+    standard.components.map((c) => c.type),
+    ['value', 'value', 'value', 'chart'],
+  );
+  assert.equal(standard.components[2].label.fr, 'Ping');
+  assert.equal(standard.components[2].value, String(Math.round(LAST_RESULT.ping)));
+  assert.equal(standard.components[2].unit, 'ms');
+  const compact = view('compact');
+  assert.deepEqual(validateWidgetContent(compact), []);
+  assert.deepEqual(
+    compact.components.map((c) => c.type),
+    ['value', 'value', 'value'],
+  );
+  // Without a result yet: dashes, still valid.
+  const empty = view('compact', null);
+  assert.deepEqual(validateWidgetContent(empty), []);
+  assert.equal(empty.components[2].value, '—');
+  // The default stays the full layout.
+  assert.ok(view(undefined).components.some((c) => c.type === 'button'));
 });

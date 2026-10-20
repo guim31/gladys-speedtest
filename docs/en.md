@@ -83,6 +83,8 @@ shows:
   ends (about half a minute). Tapping it while a test already runs does not
   start another one.
 
+**Display** shortens the widget: _Full_ (default) is the layout above; _Speeds, ping and chart_ keeps three tiles (download, upload, ping) and the chart; _Speeds and ping_ keeps the three tiles alone. The two shorter ones have no status rows nor button: a test still runs from the integration's configuration.
+
 Good to know:
 
 - The chart reads the device sensors: add the device to Gladys

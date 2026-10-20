@@ -90,6 +90,8 @@ Muestra:
   terminar la prueba (alrededor de medio minuto). Pulsarlo mientras ya hay una
   prueba en curso no lanza otra.
 
+**Visualización** aligera el widget: _Completo_ (por defecto) es la presentación anterior; _Velocidades, ping y gráfico_ conserva tres casillas (descarga, subida, ping) y el gráfico; _Velocidades y ping_ solo las tres casillas. Estas dos no tienen líneas de estado ni botón: una prueba se sigue iniciando desde la configuración de la integración.
+
 Conviene saber:
 
 - El gráfico lee los sensores del dispositivo: añada el dispositivo a Gladys
