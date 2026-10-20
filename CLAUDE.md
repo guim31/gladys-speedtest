@@ -29,13 +29,15 @@ toast du bouton, et `/data/last-result.json` relu après redémarrage.
 - `src/cloudflare.js` réutilise `measureDownload` / `measureUpload` de `src/speedtest.js`, qui
   prennent maintenant des chemins (`OOKLA_PATHS` par défaut, `CLOUDFLARE_PATHS`). Mesuré en réel
   depuis le Beelink (fibre gigabit, 4 connexions, 5 s) : ~896 / 850 Mbit/s, ping ~17 ms,
-  15 s, 164 Mo de RSS hors sandbox.
+  15 s, 164 Mo de RSS hors sandbox. Dans le conteneur verrouillé (256 Mo, `--read-only`, `CapDrop ALL`), 1 connexion :
+  ~485 / 390 Mbit/s, 16 s, 92 Mo de RSS, IP absente des logs en debug ; 19 Mo au repos.
 - Protocole vérifié le 20/10/2026 : `__down?bytes=25000000` accepté, `100000000` refusé en 403 ;
   `__up` accepte 25 Mo par POST ; latence = temps jusqu'aux en-têtes d'un `__down?bytes=0`
   moins la somme des `dur=` de `Server-Timing` (`cfSpeedEdge` + `cfSpeedWorker`, 30 à 60 ms à
   eux seuls) ; premier échantillon jeté (poignée de main).
 - **Piège** : après deux tests gigabit à cinq minutes d'écart (~3 Go), Cloudflare répond **429**
-  aux `__down` de 10 Mo et plus (les petits passent encore) pendant un bon moment. Ne pas
+  aux `__down` de 10 Mo et plus (les petits passent encore) pendant **environ une heure**
+  (mesuré le 20/10 : levé au bout de 60 min). Ne pas
   enchaîner les tests réels ; `rateLimitError` remplace le code nu par un message clair. Ne pas
   contourner la limite en réduisant la taille des requêtes.
 - L'IP publique (`/cdn-cgi/trace`) n'est gardée qu'avec `show_ip` (mémoire, `/data`, widget,
