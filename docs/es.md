@@ -92,6 +92,8 @@ Muestra:
 
 **Visualización** aligera el widget: _Completo_ (por defecto) es la presentación anterior; _Velocidades, ping y gráfico_ conserva tres casillas (descarga, subida, ping) y el gráfico; _Velocidades y ping_ solo las tres casillas. Estas dos no tienen líneas de estado ni botón: una prueba se sigue iniciando desde la configuración de la integración.
 
+**Botón «Iniciar prueba»**: _Según la visualización_ (por defecto: solo en la completa), _Siempre_ o _Nunca_, para cada widget.
+
 Conviene saber:
 
 - El gráfico lee los sensores del dispositivo: añada el dispositivo a Gladys
@@ -104,6 +106,13 @@ Conviene saber:
   no hay ningún resultado.
 - Los periodos del gráfico y el historial largo siguen sus ajustes de Gladys de
   conservación de los datos de los dispositivos.
+
+## Escenas
+
+- Disparador **Prueba automática de velocidad fallida**: una prueba automática no pudo realizarse, a menudo porque Internet está caído. Variables: el error y el número de fallos seguidos. Las pruebas se realizan cada hora por defecto (cada 10 minutos como mínimo): un corte breve entre dos pruebas no se ve.
+- Acción **Iniciar una prueba de velocidad**: espera el resultado (unos 30 s) y pasa a las acciones siguientes _Prueba correcta_, la descarga, la subida, el ping y el jitter, o el error. Una prueba fallida no hace fallar la acción: _Prueba correcta_ lo indica, en un mensaje por ejemplo. La prueba también actualiza los sensores del dispositivo, que una condición puede comprobar. Una prueba iniciada por una escena nunca activa el disparador anterior.
+
+Ejemplo: cuando el ping supera 300 ms (disparador sobre el valor del dispositivo), enviar una notificación, esperar 2 minutos, iniciar una prueba de velocidad y continuar solo si el ping sigue alto.
 
 ## Solución de problemas
 

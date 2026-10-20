@@ -7,6 +7,14 @@ Release workflow; their GitHub release carries the full notes.
 
 ### Added
 
+- Widget setting "Run a test" button: by the display (default, as in 1.5.0),
+  always or never (forum t/11382/5).
+- Scene trigger "Automatic speed test failed" (error, failures in a row) and
+  scene action "Run a speed test", whose result (success, speeds, ping,
+  jitter, error) feeds the next actions (forum t/11382/6).
+
+### Added
+
 - Widget setting "Display" (forum t/11382): _Full_ (default, unchanged),
   _Speeds, ping and chart_ (three tiles and the chart) or _Speeds and ping_
   (three tiles alone).

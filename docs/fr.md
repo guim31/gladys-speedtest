@@ -95,6 +95,8 @@ Speedtest.net & Cloudflare**). Il montre :
 
 **Affichage** allège le widget : _Complet_ (par défaut) est la présentation ci-dessus ; _Débits, ping et graphique_ garde trois cases (débit descendant, montant, ping) et le graphique ; _Débits et ping_ garde les trois cases seules. Ces deux versions n'ont ni lignes d'état ni bouton : un test se lance toujours depuis la configuration de l'intégration.
 
+**Bouton « Lancer un test »** : _Selon l'affichage_ (par défaut : en mode complet seulement), _Toujours_ ou _Jamais_, pour chaque widget.
+
 À savoir :
 
 - Le graphique lit les capteurs de l'appareil : ajoutez-le à Gladys
@@ -106,6 +108,13 @@ Speedtest.net & Cloudflare**). Il montre :
   indique qu'aucun résultat n'est encore connu.
 - Les fenêtres du graphique et l'historique long suivent vos réglages Gladys
   de conservation des données des appareils.
+
+## Scènes
+
+- Déclencheur **Test de débit automatique en échec** : un test automatique n'a pas pu aboutir, souvent parce qu'Internet est coupé. Variables : l'erreur et le nombre d'échecs consécutifs. Les tests ont lieu toutes les heures par défaut (10 minutes au minimum) : une courte coupure entre deux tests ne se voit pas.
+- Action **Lancer un test de débit** : attend le résultat (une trentaine de secondes) et donne aux actions suivantes _Test réussi_, les débits, le ping et la gigue, ou l'erreur. Un test raté ne fait pas échouer l'action : _Test réussi_ le dit, dans un message par exemple. Le test met aussi à jour les capteurs de l'appareil, qu'une condition peut vérifier. Un test lancé par une scène ne déclenche jamais le déclencheur ci-dessus.
+
+Exemple : quand le ping dépasse 300 ms (déclencheur sur la valeur de l'appareil), envoyer une notification, attendre 2 minutes, lancer un test de débit, et continuer seulement si le ping est toujours élevé.
 
 ## Dépannage
 

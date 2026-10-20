@@ -156,8 +156,27 @@ async function runAndPublish(gladys, config) {
   }
 }
 
+// Scene declarations (manifest `scene_triggers` / `scene_actions`): keys frozen.
+export const SCENE_TRIGGER = { TEST_FAILED: 'test_failed' };
+export const SCENE_ACTION = { RUN_TEST: 'run_test' };
+
 export const speedtest = {
   key: DEVICE_TYPE,
+
+  // Scene actions (Gladys 5.1+): "Run a speed test" waits for the result and
+  // gives it to the next actions of the scene. A failed test is an output
+  // (success: false), not a failed action, so the scene can test it.
+  sceneActions: {
+    async [SCENE_ACTION.RUN_TEST](gladys, { config }) {
+      logger.info('Speed test requested by a scene');
+      try {
+        const { download, upload, ping, jitter } = await runAndPublish(gladys, config);
+        return { success: true, download, upload, ping, jitter, error: '' };
+      } catch (err) {
+        return { success: false, error: String(err.message).slice(0, 200) };
+      }
+    },
+  },
 
   deviceExternalId(gladys) {
     return gladys.externalIds(DEVICE_TYPE, PLATFORM_DEVICE_ID).device;
@@ -259,6 +278,17 @@ export const speedtest = {
         },
         (err) => {
           failures += 1;
+          // Scene trigger "Test failed": only from the automatic tests, never
+          // from a test a scene asked for (no loop through the integration).
+          // A failed test of a cut line is how a scene notices the outage.
+          Promise.resolve()
+            .then(() =>
+              gladys.publishSceneEvent?.(SCENE_TRIGGER.TEST_FAILED, {
+                error: String(err.message).slice(0, 200),
+                failures,
+              }),
+            )
+            .catch((error) => logger.debug(`Scene event refused: ${error.message}`));
           if (failures === 1) {
             logger.error(`Scheduled speed test failed: ${err.message}`);
           } else {
