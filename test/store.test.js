@@ -38,7 +38,9 @@ test('normalizeResult keeps what the widget needs, and only that', () => {
     ping: 3.1,
     jitter: 0.4,
     server: { id: '32565', sponsor: 'Free', name: 'Marseille', country: 'France' },
+    ip: null,
   });
+  assert.equal(normalizeResult({ ...RESULT, ip: '192.0.2.10' }).ip, '192.0.2.10');
   assert.equal(normalizeResult(null), null);
   assert.equal(normalizeResult({ download: 1 }), null, 'a result without a date is useless');
   assert.equal(normalizeResult({ at: 'not a date' }), null);

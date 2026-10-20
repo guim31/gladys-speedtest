@@ -1,0 +1,16 @@
+fl=1038f52
+h=speed.cloudflare.com
+ip=198.51.100.23
+ts=1792500422.000
+visit_scheme=https
+uag=gladys-speedtest (+https://github.com/guim31/gladys-speedtest)
+colo=CDG
+sliver=050-tier1
+http=http/1.1
+loc=FR
+tls=TLSv1.3
+sni=plaintext
+warp=off
+gateway=off
+rbi=off
+kex=X25519
