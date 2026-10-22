@@ -5,6 +5,12 @@ Release workflow; their GitHub release carries the full notes.
 
 ## [Unreleased]
 
+### Security
+
+- Rebuilt on Node.js 24.22.1, the October 2026 security release (remote code
+  execution in the Brotli decoder, CVE-2026-111497; TLS hostname and DNS
+  fixes).
+
 ### Added
 
 - Widget setting "Run a test" button: by the display (default, as in 1.5.0),
