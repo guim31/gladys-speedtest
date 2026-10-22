@@ -8,8 +8,8 @@
     "de": "Miss regelmäßig deine Internetgeschwindigkeit mit Speedtest.net oder Cloudflare.",
     "es": "Mida periódicamente la velocidad de su conexión con Speedtest.net o Cloudflare."
   },
-  "version": "1.6.0",
-  "docker_image": "ghcr.io/guim31/gladys-speedtest:1.6.0",
+  "version": "1.6.1",
+  "docker_image": "ghcr.io/guim31/gladys-speedtest:1.6.1",
   "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-speedtest/main/cover.png",
   "categories": ["network", "services"],
